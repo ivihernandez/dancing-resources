@@ -1,0 +1,267 @@
+<title>Salsa Practice Tracker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+  :root {
+    --bg: #FFFAF5; --fg: #2D1B12; --surface: #FFF5EC; --border: #E8D5C4; --accent: #C0392B; --accent-soft: #F2D7D3; --muted: #8B6F5E; --tag-video: #E74C3C; --tag-guide: #2980B9; --tag-app: #27AE60; --tag-playlist: #8E44AD; --tag-course: #E67E22; --tag-tool: #16A085; --check: #27AE60; --phase-learned: #27AE60; --phase-practice: #E67E22; --phase-next: #8B6F5E; font-family: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif; font-size: 15px; color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #1A120D; --fg: #F0E6DD; --surface: #2A1E16; --border: #3D2E22; --accent: #E74C3C; --accent-soft: #3D1A16; --muted: #A08879; --tag-video: #E74C3C; --tag-guide: #5DADE2; --tag-app: #58D68D; --tag-playlist: #BB8FCE; --tag-course: #F0B27A; --tag-tool: #48C9B0; --check: #58D68D; --phase-learned: #58D68D; --phase-practice: #F0B27A; --phase-next: #A08879; color-scheme: dark; } }
+  :root[data-theme="dark"] { --bg: #1A120D; --fg: #F0E6DD; --surface: #2A1E16; --border: #3D2E22; --accent: #E74C3C; --accent-soft: #3D1A16; --muted: #A08879; --tag-video: #E74C3C; --tag-guide: #5DADE2; --tag-app: #58D68D; --tag-playlist: #BB8FCE; --tag-course: #F0B27A; --tag-tool: #48C9B0; --check: #58D68D; --phase-learned: #58D68D; --phase-practice: #F0B27A; --phase-next: #A08879; color-scheme: dark; }
+  body { background: var(--bg); color: var(--fg); margin: 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0; line-height: 1.5; }
+  .wrap { max-width: 960px; margin: 0 auto; padding-block: 2rem; }
+  h1 { font-family: 'Playfair Display', Georgia, serif; font-weight: 800; font-size: clamp(1.8rem, 5vw, 2.6rem); margin: 0 0 0.25rem; text-wrap: balance; }
+  h1 span { color: var(--accent); }
+  .subtitle { color: var(--muted); font-size: 0.95rem; margin: 0 0 1.5rem; }
+  .progress-map { display: flex; gap: 0; margin-bottom: 1.5rem; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+  .progress-phase { flex: 1; padding: 0.6rem 0.75rem; text-align: center; font-size: 0.78rem; font-weight: 600; background: var(--surface); border-right: 1px solid var(--border); min-width: 0; }
+  .progress-phase:last-child { border-right: none; }
+  .progress-phase .phase-label { display: block; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.15rem; }
+  .progress-phase.learned { border-bottom: 3px solid var(--phase-learned); }
+  .progress-phase.learned .phase-label { color: var(--phase-learned); }
+  .progress-phase.practice { border-bottom: 3px solid var(--phase-practice); }
+  .progress-phase.practice .phase-label { color: var(--phase-practice); }
+  .progress-phase.next { border-bottom: 3px solid var(--phase-next); }
+  .progress-phase.next .phase-label { color: var(--phase-next); }
+  .stats-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem 1.25rem; flex: 1; min-width: 120px; }
+  .stat-card .num { font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 1.6rem; color: var(--accent); }
+  .stat-card .label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .phase-header { margin: 2.5rem 0 0.25rem; padding: 0.75rem 1rem; background: var(--accent-soft); border-radius: 10px; border-left: 4px solid var(--accent); }
+  .phase-header h2 { font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 1.2rem; margin: 0; }
+  .phase-header .phase-desc { font-size: 0.85rem; color: var(--muted); margin: 0.15rem 0 0; }
+  .phase-header .status-badge { display: inline-block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.1rem 0.5rem; border-radius: 4px; margin-left: 0.5rem; vertical-align: middle; }
+  .status-badge.learned { background: color-mix(in srgb, var(--phase-learned) 15%, transparent); color: var(--phase-learned); }
+  .status-badge.practice { background: color-mix(in srgb, var(--phase-practice) 15%, transparent); color: var(--phase-practice); }
+  .status-badge.next { background: color-mix(in srgb, var(--phase-next) 15%, transparent); color: var(--phase-next); }
+  .sub-section { font-weight: 700; font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 1rem 0 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+  .sub-section::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .table-wrap { overflow-x: auto; margin-bottom: 0.5rem; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 0.88rem; }
+  thead th { text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  tbody td { padding: 0.6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody tr:hover { background: var(--surface); }
+  .resource-name { font-weight: 600; min-width: 0; }
+  .resource-name a { color: var(--fg); text-decoration: none; border-bottom: 1px solid var(--border); transition: border-color 0.15s; }
+  .resource-name a:hover { border-color: var(--accent); color: var(--accent); }
+  .tag { display: inline-block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.15rem 0.5rem; border-radius: 4px; white-space: nowrap; }
+  .tag-video { background: color-mix(in srgb, var(--tag-video) 15%, transparent); color: var(--tag-video); }
+  .tag-guide { background: color-mix(in srgb, var(--tag-guide) 15%, transparent); color: var(--tag-guide); }
+  .tag-app { background: color-mix(in srgb, var(--tag-app) 15%, transparent); color: var(--tag-app); }
+  .tag-playlist { background: color-mix(in srgb, var(--tag-playlist) 15%, transparent); color: var(--tag-playlist); }
+  .tag-course { background: color-mix(in srgb, var(--tag-course) 15%, transparent); color: var(--tag-course); }
+  .tag-tool { background: color-mix(in srgb, var(--tag-tool) 15%, transparent); color: var(--tag-tool); }
+  .time-est { color: var(--muted); white-space: nowrap; }
+  .date-cell { min-width: 100px; }
+  .date-cell input { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 0.25rem 0.4rem; font-size: 0.82rem; color: var(--fg); font-family: inherit; width: 100%; box-sizing: border-box; }
+  .done-check { width: 18px; height: 18px; accent-color: var(--check); cursor: pointer; }
+  tr.completed .resource-name a { text-decoration: line-through; color: var(--muted); }
+  .note-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.85rem; color: var(--muted); margin: 0.75rem 0; line-height: 1.6; }
+  .note-box strong { color: var(--fg); }
+  .search-terms { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .search-term { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 0.2rem 0.5rem; font-size: 0.78rem; color: var(--muted); font-family: monospace; }
+  .footer-note { color: var(--muted); font-size: 0.8rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+  @media (max-width: 600px) { table { font-size: 0.82rem; } thead th, tbody td { padding: 0.45rem 0.4rem; } .stat-card { min-width: 90px; padding: 0.5rem 0.75rem; } .stat-card .num { font-size: 1.3rem; } .date-cell { min-width: 85px; } .progress-phase { padding: 0.5rem 0.35rem; font-size: 0.7rem; } }
+</style>
+<div class="wrap">
+  <h1>Salsa <span>On1</span> Practice</h1>
+  <p class="subtitle">Your progression: counting → forward/back → side steps → cross-body lead → combinations → music without counts.</p>
+  <div class="progress-map">
+    <div class="progress-phase learned"><span class="phase-label">Learned</span>The Count</div>
+    <div class="progress-phase practice"><span class="phase-label">Practicing</span>Fwd / Back</div>
+    <div class="progress-phase practice"><span class="phase-label">Practicing</span>Side Steps</div>
+    <div class="progress-phase practice"><span class="phase-label">Practicing</span>Cross-Body Lead</div>
+    <div class="progress-phase next"><span class="phase-label">Next</span>Combinations</div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="num" id="total-count">0</div><div class="label">Resources</div></div>
+    <div class="stat-card"><div class="num" id="done-count">0</div><div class="label">Completed</div></div>
+    <div class="stat-card"><div class="num" id="total-time">0h</div><div class="label">Est. Total</div></div>
+    <div class="stat-card"><div class="num" id="done-time">0h</div><div class="label">Time Done</div></div>
+  </div>
+  <div class="phase-header">
+    <h2>Phase 0: The Count <span class="status-badge learned">Learned</span></h2>
+    <p class="phase-desc">1-2-3 (pause) 5-6-7 (pause). You know this — these are here for review.</p>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th>Resource</th><th>Type</th><th>Est.</th><th>Added</th><th>Finished</th></tr></thead>
+      <tbody>
+        <tr data-type="video"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/watch?v=mkH1UhF3XrQ" target="_blank">How To Count Salsa On 1 — Timing Explanation</a></td><td><span class="tag tag-video">Video</span></td><td class="time-est">8 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="guide"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://thedancedojo.com/salsa-timing/" target="_blank">Salsa Timing 101 — The Dance Dojo</a></td><td><span class="tag tag-guide">Guide</span></td><td class="time-est">15 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="video"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/watch?v=DOGZiZg0_js" target="_blank">Feel the Salsa Beat — Find the 1 Without Counting</a></td><td><span class="tag tag-video">Video</span></td><td class="time-est">10 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="guide"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://thedancedojo.com/blog/how-to-find-the-beat-in-salsa-music/" target="_blank">Finding the Beat — Free Mini-Course (Dance Dojo)</a></td><td><span class="tag tag-guide">Guide</span></td><td class="time-est">20 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="phase-header">
+    <h2>Phase 1: Step Forward &amp; Backward <span class="status-badge practice">Practicing</span></h2>
+    <p class="phase-desc">The basic: lead steps forward on 1, back on 5. Stay on your line (the slot).</p>
+  </div>
+  <div class="note-box">
+    <strong>Your line vs. her line:</strong> In On1 (LA style), you dance on a straight line called the <em>slot</em>. The lead and follow each have their own track — like two rails of a train track. You step forward/back on your rail; she steps forward/back on hers. You never cross into each other's track during the basic.
+  </div>
+  <div class="sub-section">With counting</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th>Resource</th><th>Type</th><th>Est.</th><th>Added</th><th>Finished</th></tr></thead>
+      <tbody>
+        <tr data-type="video"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/watch?v=wV8cDpJa2f4" target="_blank">Salsa Beginners 1 — Basic Step for Absolute Beginner</a></td><td><span class="tag tag-video">Video</span></td><td class="time-est">10 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="video"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/watch?v=t_clXFnHJEU" target="_blank">How to Salsa Dance for Beginners — On1 Salsa</a></td><td><span class="tag tag-video">Video</span></td><td class="time-est">12 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="video"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/watch?v=Pp4B7-0UY6k" target="_blank">Basic Salsa Rhythm &amp; Footwork — LiWen Ang</a></td><td><span class="tag tag-video">Video</span></td><td class="time-est">10 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="guide"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://thedancedojo.com/how-to-salsa-dance-for-beginners/front-back-and-side-salsa-basic-steps/" target="_blank">Front, Back &amp; Side Basic Steps — Dance Dojo</a></td><td><span class="tag tag-guide">Guide</span></td><td class="time-est">15 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="video"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/watch?v=bbiiRkKfrSY" target="_blank">Practice song — counting only on 1</a></td><td><span class="tag tag-video">Video</span></td><td class="time-est">5 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="video"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/watch?v=wxgxSYZqqiw" target="_blank">Practice song — counting 1-2-3 5-6-7</a></td><td><span class="tag tag-video">Video</span></td><td class="time-est">5 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="sub-section">Without counting — just the music</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th>Resource</th><th>Type</th><th>Est.</th><th>Added</th><th>Finished</th></tr></thead>
+      <tbody>
+        <tr data-type="video"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/watch?v=7GBZQhlKjCw" target="_blank">Salsa Basics Practice On1 to Slow Music</a></td><td><span class="tag tag-video">Video</span></td><td class="time-est">10 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="video"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/watch?v=vuxul6qQ-VQ" target="_blank">Slow Salsa Practice Music — 80 BPM, 60 min</a></td><td><span class="tag tag-video">Video</span></td><td class="time-est">15 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="phase-header">
+    <h2>Phase 2: Side Steps <span class="status-badge practice">Practicing</span></h2>
+    <p class="phase-desc">Step left/right instead of forward/back — same count, lateral movement.</p>
+  </div>
+  <div class="sub-section">With counting</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th>Resource</th><th>Type</th><th>Est.</th><th>Added</th><th>Finished</th></tr></thead>
+      <tbody>
+        <tr data-type="video"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/watch?v=4ODXE6ga_BQ" target="_blank">How to Salsa Dance for Beginners — includes side basic</a></td><td><span class="tag tag-video">Video</span></td><td class="time-est">15 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="video"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/watch?v=6vT4IlJWQ-Y" target="_blank">Basic On1 Salsa Steps Practice For Beginners (Dance With Rasa)</a></td><td><span class="tag tag-video">Video</span></td><td class="time-est">8 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="video"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/watch?v=tjCYrooqvUk" target="_blank">Salsa On1 Footwork Basics — covers side basic (Michael Thomas)</a></td><td><span class="tag tag-video">Video</span></td><td class="time-est">12 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="video"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/watch?v=DNSt7-CDNLg" target="_blank">Salsa counting song 1-2-3 5-6-7 — practice side steps</a></td><td><span class="tag tag-video">Video</span></td><td class="time-est">5 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="sub-section">Without counting — just the music</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th>Resource</th><th>Type</th><th>Est.</th><th>Added</th><th>Finished</th></tr></thead>
+      <tbody>
+        <tr data-type="playlist"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/playlist?list=PLnGPtlzdk2UOhzSoumLge4lTCay6x-SMQ" target="_blank">Salsa Timing &amp; Rhythm Songs With Counts (playlist)</a></td><td><span class="tag tag-playlist">Playlist</span></td><td class="time-est">~1.5 hrs</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="phase-header">
+    <h2>Phase 3: Cross-Body Lead (Change of Position) <span class="status-badge practice">Practicing</span></h2>
+    <p class="phase-desc">You and she swap places. On count 5 you step your right foot back to open the door; on counts 5-6-7 she walks across. Your lines trade.</p>
+  </div>
+  <div class="note-box">
+    <strong>The slot swap:</strong> Think of it as two train tracks. During the basic, you each stay on your track. During the cross-body lead, you step off your track (step back and to the side on 5) to let her walk across from her track to yours. Then you step onto where her track was. You've swapped sides of the slot. The "railway tracks" analogy from Dance Dojo explains this best.
+  </div>
+  <div class="sub-section">With counting — learn the footwork</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th>Resource</th><th>Type</th><th>Est.</th><th>Added</th><th>Finished</th></tr></thead>
+      <tbody>
+        <tr data-type="guide"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://thedancedojo.com/blog/cross-body-lead-beginner-salsa-step/" target="_blank">Cross Body Lead — Railway Tracks Analogy (Dance Dojo)</a></td><td><span class="tag tag-guide">Guide</span></td><td class="time-est">15 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="video"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/watch?v=zY_DELXUtFo" target="_blank">Salsa Footwork Tutorial — CROSS (On1 &amp; On2)</a></td><td><span class="tag tag-video">Video</span></td><td class="time-est">12 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="video"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/watch?v=Vj5s9v2CTQg" target="_blank">Salsa Dancing Footwork — Basic Step On1 (Fawakaa)</a></td><td><span class="tag tag-video">Video</span></td><td class="time-est">8 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="video"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/watch?v=6aUbNMPQCKo" target="_blank">Salsa On1 vs On2 Basic Step Explained</a></td><td><span class="tag tag-video">Video</span></td><td class="time-est">10 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="sub-section">Understand the slot &amp; positioning</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th>Resource</th><th>Type</th><th>Est.</th><th>Added</th><th>Finished</th></tr></thead>
+      <tbody>
+        <tr data-type="guide"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.salsavida.com/salsa-dance-terms/la-style-salsa-on-1/" target="_blank">LA Style Salsa (On1) — Slot Explained (SalsaVida)</a></td><td><span class="tag tag-guide">Guide</span></td><td class="time-est">8 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="guide"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://en.wikipedia.org/wiki/Dance_slot" target="_blank">Dance Slot Concept — Wikipedia</a></td><td><span class="tag tag-guide">Guide</span></td><td class="time-est">5 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="guide"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://de.wikibooks.org/wiki/Tanzen:_Salsa:_Der_Figuren-Spickzettel:_Mittelstufe" target="_blank">Salsa Floor Diagrams — German Wikibooks (visual)</a></td><td><span class="tag tag-guide">Guide</span></td><td class="time-est">10 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="guide"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.salsavida.com/salsa-dance-terms/basic-step/" target="_blank">Basic Step — On1 Count Breakdown (SalsaVida)</a></td><td><span class="tag tag-guide">Guide</span></td><td class="time-est">5 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="sub-section">Variations (once you have the basic cross-body lead)</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th>Resource</th><th>Type</th><th>Est.</th><th>Added</th><th>Finished</th></tr></thead>
+      <tbody>
+        <tr data-type="guide"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://thedancedojo.com/blog/cross-body-lead-open-break/" target="_blank">Cross Body Lead With an Open Break</a></td><td><span class="tag tag-guide">Guide</span></td><td class="time-est">10 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="guide"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://thedancedojo.com/blog/how-to-do-the-reverse-cross-body-lead-right-side-pass/" target="_blank">Reverse Cross Body Lead (Right Side Pass)</a></td><td><span class="tag tag-guide">Guide</span></td><td class="time-est">10 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="phase-header">
+    <h2>Phase 4: Combinations <span class="status-badge next">Next Up</span></h2>
+    <p class="phase-desc">Chain basics together: forward/back → side step → cross-body lead → repeat. This is where class is headed.</p>
+  </div>
+  <div class="sub-section">With counting</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th>Resource</th><th>Type</th><th>Est.</th><th>Added</th><th>Finished</th></tr></thead>
+      <tbody>
+        <tr data-type="video"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/watch?v=t_clXFnHJEU" target="_blank">How to Salsa Dance for Beginners — combo walkthrough</a></td><td><span class="tag tag-video">Video</span></td><td class="time-est">12 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="course"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://lafontaine.atlassian.net/wiki/spaces/PUB/pages/726401041/Salsa+On+1" target="_blank">LaFontaine Salsa On1 Level 1 Syllabus — structured combos</a></td><td><span class="tag tag-course">Course</span></td><td class="time-est">~2 hrs</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="sub-section">Without counting — dance to real music</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th>Resource</th><th>Type</th><th>Est.</th><th>Added</th><th>Finished</th></tr></thead>
+      <tbody>
+        <tr data-type="playlist"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/playlist?list=PLyNO1nulWcX_J6s6yw9PL8mJHTgLNrZbb" target="_blank">Salsa Practice Music playlist — dance full combos</a></td><td><span class="tag tag-playlist">Playlist</span></td><td class="time-est">~2 hrs</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="video"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/watch?v=vuxul6qQ-VQ" target="_blank">Slow Salsa Practice Music — 80 BPM, 60 min (no counts)</a></td><td><span class="tag tag-video">Video</span></td><td class="time-est">20 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="phase-header">
+    <h2>Tools &amp; Practice Apps</h2>
+    <p class="phase-desc">Use these at any phase to drill footwork and slow down tracks.</p>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th>Resource</th><th>Type</th><th>Est.</th><th>Added</th><th>Finished</th></tr></thead>
+      <tbody>
+        <tr data-type="app"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://apps.apple.com/app/salsa-rhythm/id562891680" target="_blank">Salsa Rhythm — On1/On2 timing trainer ($2.99, iOS/Android)</a></td><td><span class="tag tag-app">App</span></td><td class="time-est">ongoing</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="app"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.dancerealityapp.com/" target="_blank">Dance Reality — AR footprints on your floor (Free, iOS/Android)</a></td><td><span class="tag tag-app">App</span></td><td class="time-est">30 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="app"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://play.google.com/store/apps/details?id=com.salsapractice" target="_blank">Salsa Practice — voice-guided combos (Free, Android)</a></td><td><span class="tag tag-app">App</span></td><td class="time-est">20 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="tool"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://salsabeatmachine.org" target="_blank">Salsa Beat Machine — slow down any track (Free, Web)</a></td><td><span class="tag tag-tool">Tool</span></td><td class="time-est">5 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="tool"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.salsavida.com/tunetempo/" target="_blank">TuneTempo — slow/speed music without pitch change (Free, Web)</a></td><td><span class="tag tag-tool">Tool</span></td><td class="time-est">5 min</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="phase-header">
+    <h2>YouTube Channels to Follow</h2>
+    <p class="phase-desc">Subscribe for ongoing tutorials as you progress.</p>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th>Resource</th><th>Type</th><th>Est.</th><th>Added</th><th>Finished</th></tr></thead>
+      <tbody>
+        <tr data-type="course"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/c/dancepapi" target="_blank">Dance Papi (~69K subs) — On1 focused</a></td><td><span class="tag tag-course">Channel</span></td><td class="time-est">ongoing</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+        <tr data-type="course"><td><input type="checkbox" class="done-check"></td><td class="resource-name"><a href="https://www.youtube.com/user/thedancedojo" target="_blank">The Dance Dojo (~87K subs) — structured lessons</a></td><td><span class="tag tag-course">Channel</span></td><td class="time-est">ongoing</td><td class="date-cell"><input type="date" value="2026-10-15"></td><td class="date-cell"><input type="date"></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="phase-header">
+    <h2>YouTube Search Terms for More</h2>
+    <p class="phase-desc">Search these on YouTube to find additional resources.</p>
+  </div>
+  <div class="search-terms">
+    <span class="search-term">salsa on1 basic lead</span>
+    <span class="search-term">salsa cross body lead counts</span>
+    <span class="search-term">salsa footwork overhead view</span>
+    <span class="search-term">salsa slot explained</span>
+    <span class="search-term">finding the 1 in salsa</span>
+    <span class="search-term">slow salsa practice music</span>
+    <span class="search-term">salsa lead frame beginner</span>
+    <span class="search-term">cross body lead tutorial diagram</span>
+    <span class="search-term">salsa footwork animation</span>
+  </div>
+  <div class="footer-note">
+    Progress is saved in your browser's local storage. Dates and checkmarks persist across visits on this device.
+  </div>
+</div>
+<script>
+(function(){var KEY='salsa-practice-v2';function loadState(){try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return{};}}function saveState(s){try{localStorage.setItem(KEY,JSON.stringify(s));}catch(e){}}var state=loadState();var rows=document.querySelectorAll('tbody tr');rows.forEach(function(row,i){var check=row.querySelector('.done-check');var inputs=row.querySelectorAll('.date-cell input');var addDate=inputs[0];var finDate=inputs[1];if(state[i]){if(state[i].done){check.checked=true;row.classList.add('completed');}if(state[i].finished)finDate.value=state[i].finished;if(state[i].added)addDate.value=state[i].added;}check.addEventListener('change',function(){if(!state[i])state[i]={};state[i].done=check.checked;row.classList.toggle('completed',check.checked);if(check.checked&&!finDate.value){finDate.value=new Date().toISOString().slice(0,10);state[i].finished=finDate.value;}saveState(state);updateStats();});finDate.addEventListener('change',function(){if(!state[i])state[i]={};state[i].finished=finDate.value;saveState(state);});addDate.addEventListener('change',function(){if(!state[i])state[i]={};state[i].added=addDate.value;saveState(state);});});function parseTime(text){text=text.trim().toLowerCase();if(text.indexOf('ongoing')>=0||text.indexOf('setup')>=0)return 0;var hMatch=text.match(/([\d.]+)\s*h/);var mMatch=text.match(/([\d.]+)\s*min/);var mins=0;if(hMatch)mins+=parseFloat(hMatch[1])*60;if(mMatch)mins+=parseFloat(mMatch[1]);if(!hMatch&&!mMatch){var n=parseFloat(text.replace(/[^0-9.]/g,''));if(!isNaN(n))mins=n;}return mins;}function formatTime(mins){if(mins>=60){var h=Math.floor(mins/60);var m=Math.round(mins%60);return m>0?h+'h '+m+'m':h+'h';}return Math.round(mins)+'m';}function updateStats(){var total=0,done=0,totalTime=0,doneTime=0;rows.forEach(function(row){if(row.hidden)return;total++;var t=parseTime(row.querySelector('.time-est').textContent);totalTime+=t;if(row.querySelector('.done-check').checked){done++;doneTime+=t;}});document.getElementById('total-count').textContent=total;document.getElementById('done-count').textContent=done;document.getElementById('total-time').textContent=formatTime(totalTime);document.getElementById('done-time').textContent=formatTime(doneTime);}updateStats();})();
+</script>
