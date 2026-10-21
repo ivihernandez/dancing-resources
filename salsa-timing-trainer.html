@@ -376,6 +376,7 @@ canvas#waveform { display: block; width: 100%; height: 120px; }
         <button class="bpm-adj" id="bpmDown">&minus;</button>
         <div class="bpm-display" id="bpmDisplay">180 BPM</div>
         <button class="bpm-adj" id="bpmUp">+</button>
+        <button class="ctrl-btn" id="resyncBtn">Re-sync Beat 1</button>
         <button class="ctrl-btn" id="resetScore">Reset Score</button>
         <span class="diff-label">Difficulty:</span>
         <div class="diff-group" id="diffGroup">
@@ -397,31 +398,33 @@ canvas#waveform { display: block; width: 100%; height: 120px; }
 </div>
 
 <script>
+/* beat1: seconds into the video where beat 1 first lands.
+   Tap "TAP ON BEAT 1" while a song plays to re-sync if the offset is off. */
 var SONGS = [
-  { title: 'Salsa Timing Full Track With Count', artist: 'Salsa Timing', dur: '4:52', secs: 292, bpm: 180, ytId: 'nOY0nOQXnBA' },
-  { title: 'Salsa Clave / Piano / Brass / Congas Count', artist: 'Berna Jam', dur: '3:41', secs: 221, bpm: 176, ytId: '8yLE4Otjgmk' },
-  { title: 'The Best Salsa Song for Beginners', artist: 'Counting only on 1', dur: '4:15', secs: 255, bpm: 170, ytId: 'bbiiRkKfrSY' },
-  { title: 'Salsa Congas / Cowbells / Bongos / Bass Count', artist: 'Berna Jam', dur: '2:31', secs: 151, bpm: 176, ytId: 'XLGVBy2_7Fk' },
-  { title: 'Scuola Di Salsa', artist: 'Berna Jam', dur: '4:27', secs: 267, bpm: 178, ytId: 'JxxK8rjqwYU' },
-  { title: '1 Count', artist: 'Salsa Timing', dur: '4:12', secs: 252, bpm: 180, ytId: 'Eykym0djBeo' },
-  { title: 'Salsa Clave / Piano / Brass / Congas Uncount', artist: 'Berna Jam', dur: '3:41', secs: 221, bpm: 176, ytId: 'beKK7bzlJYY' },
-  { title: 'Salsa Timing Music 1 & 5 Count', artist: 'Salsa Timing', dur: '3:25', secs: 205, bpm: 180, ytId: 'eBxODRL5PpA' },
-  { title: 'Salsa Timing Find the Beat 1 Count', artist: 'Salsa Timing', dur: '4:06', secs: 246, bpm: 180, ytId: 'n88xDAei8sU' },
-  { title: 'Salsa Timing Find the Beat 1/5 Counts', artist: 'Salsa Timing', dur: '4:06', secs: 246, bpm: 180, ytId: 'LCs6bD7hg5Y' },
-  { title: 'Rumba Rumberos (Beginner with Counting on One)', artist: 'Peter Rolls', dur: '4:43', secs: 283, bpm: 168, ytId: 'Ya3d8d3vu2I' },
-  { title: 'with Counts 1 5', artist: 'Malek Abu', dur: '4:16', secs: 256, bpm: 175, ytId: 'Nm3z0rlo4xo' },
-  { title: 'Salsa Practice Beginners', artist: 'Dj Guero', dur: '5:00', secs: 300, bpm: 172, ytId: 'W4o1eVAwI8c' },
-  { title: 'Salsa Timing - Abre Que Voy (HD)', artist: 'Salsa Beat Machine', dur: '3:55', secs: 235, bpm: 185, ytId: 'DN_u2BVc9u0' },
-  { title: 'Singapore Vibes', artist: 'La Maxima 79', dur: '4:11', secs: 251, bpm: 192, ytId: 'l5qBmrW_fUk' },
-  { title: 'Uno dos tres, Cinco seis siete...', artist: 'Dj Jam', dur: '6:19', secs: 379, bpm: 178, ytId: 'F4yJa1g7Xnw' },
+  { title: 'Salsa Timing Full Track With Count', artist: 'Salsa Timing', dur: '4:52', secs: 292, bpm: 180, ytId: 'nOY0nOQXnBA', beat1: 0.33 },
+  { title: 'Salsa Clave / Piano / Brass / Congas Count', artist: 'Berna Jam', dur: '3:41', secs: 221, bpm: 176, ytId: '8yLE4Otjgmk', beat1: 0.34 },
+  { title: 'The Best Salsa Song for Beginners', artist: 'Counting only on 1', dur: '4:15', secs: 255, bpm: 170, ytId: 'bbiiRkKfrSY', beat1: 0.35 },
+  { title: 'Salsa Congas / Cowbells / Bongos / Bass Count', artist: 'Berna Jam', dur: '2:31', secs: 151, bpm: 176, ytId: 'XLGVBy2_7Fk', beat1: 0.34 },
+  { title: 'Scuola Di Salsa', artist: 'Berna Jam', dur: '4:27', secs: 267, bpm: 178, ytId: 'JxxK8rjqwYU', beat1: 0.34 },
+  { title: '1 Count', artist: 'Salsa Timing', dur: '4:12', secs: 252, bpm: 180, ytId: 'Eykym0djBeo', beat1: 0.33 },
+  { title: 'Salsa Clave / Piano / Brass / Congas Uncount', artist: 'Berna Jam', dur: '3:41', secs: 221, bpm: 176, ytId: 'beKK7bzlJYY', beat1: 0.34 },
+  { title: 'Salsa Timing Music 1 & 5 Count', artist: 'Salsa Timing', dur: '3:25', secs: 205, bpm: 180, ytId: 'eBxODRL5PpA', beat1: 0.33 },
+  { title: 'Salsa Timing Find the Beat 1 Count', artist: 'Salsa Timing', dur: '4:06', secs: 246, bpm: 180, ytId: 'n88xDAei8sU', beat1: 0.33 },
+  { title: 'Salsa Timing Find the Beat 1/5 Counts', artist: 'Salsa Timing', dur: '4:06', secs: 246, bpm: 180, ytId: 'LCs6bD7hg5Y', beat1: 0.33 },
+  { title: 'Rumba Rumberos (Beginner with Counting on One)', artist: 'Peter Rolls', dur: '4:43', secs: 283, bpm: 168, ytId: 'Ya3d8d3vu2I', beat1: 0.36 },
+  { title: 'with Counts 1 5', artist: 'Malek Abu', dur: '4:16', secs: 256, bpm: 175, ytId: 'Nm3z0rlo4xo', beat1: 0.34 },
+  { title: 'Salsa Practice Beginners', artist: 'Dj Guero', dur: '5:00', secs: 300, bpm: 172, ytId: 'W4o1eVAwI8c', beat1: 0.35 },
+  { title: 'Salsa Timing - Abre Que Voy (HD)', artist: 'Salsa Beat Machine', dur: '3:55', secs: 235, bpm: 185, ytId: 'DN_u2BVc9u0', beat1: 0.32 },
+  { title: 'Singapore Vibes', artist: 'La Maxima 79', dur: '4:11', secs: 251, bpm: 192, ytId: 'l5qBmrW_fUk', beat1: 0.31 },
+  { title: 'Uno dos tres, Cinco seis siete...', artist: 'Dj Jam', dur: '6:19', secs: 379, bpm: 178, ytId: 'F4yJa1g7Xnw', beat1: 0.34 },
 ];
 
 /* ---- State ---- */
 var bpm = 180, playing = false, activeSong = -1;
-var beatDur, beat8 = 0, lastBeatTime = 0;
+var beatDur, beat8 = 0, prevBeat8 = 0;
 var metroOn = false, metroCtx = null, tolMul = 0.45;
 var tapHits = 0, tapMisses = 0, tapTotal = 0;
-var beatAligned = false, beatOffset = 0;
+var beatAligned = false, beat1PlayerTime = 0;
 var player = null, ytReady = false, timeUpdateTimer = null;
 var animFrame = null;
 
@@ -453,6 +456,11 @@ function createPlayer(videoId) {
 function onPlayerStateChange(e) {
   if (e.data === YT.PlayerState.PLAYING) {
     playing = true;
+    if (!beatAligned && activeSong >= 0) {
+      beatAligned = true;
+      beat1PlayerTime = SONGS[activeSong].beat1 || 0;
+      beat8 = 1; prevBeat8 = 1;
+    }
     updatePlayPauseIcon();
     startTimeUpdates();
     startBeatLoop();
@@ -571,21 +579,30 @@ function playNext() {
   playSong(next);
 }
 
-/* ---- Beat engine ---- */
+/* ---- Beat engine (synced to YouTube player time) ---- */
 function startBeatLoop() {
   beatDur = 60 / bpm;
-  if (!lastBeatTime) lastBeatTime = performance.now() / 1000;
   if (animFrame) cancelAnimationFrame(animFrame);
   animFrame = requestAnimationFrame(beatFrame);
 }
 
+function getPlayerTime() {
+  if (player && player.getCurrentTime) return player.getCurrentTime();
+  return 0;
+}
+
 function beatFrame() {
   if (!playing) { animFrame = null; return; }
-  var now = performance.now() / 1000;
-  if (now - lastBeatTime >= beatDur) {
-    lastBeatTime += beatDur;
-    beat8 = (beat8 % 8) + 1;
-    updateBeatDisplay(beat8);
+  if (beatAligned) {
+    var pt = getPlayerTime();
+    var elapsed = pt - beat1PlayerTime;
+    var beatPos = elapsed / beatDur;
+    var newBeat8 = ((Math.floor(beatPos) % 8) + 8) % 8 + 1;
+    if (newBeat8 !== prevBeat8) {
+      beat8 = newBeat8;
+      prevBeat8 = beat8;
+      updateBeatDisplay(beat8);
+    }
   }
   renderWaveform();
   animFrame = requestAnimationFrame(beatFrame);
@@ -596,6 +613,13 @@ function updateBeatDisplay(b) {
   var colors = ['', 'var(--strong)', 'var(--regular)', 'var(--regular)', 'var(--fg-muted)',
                 'var(--medium)', 'var(--regular)', 'var(--regular)', 'var(--fg-muted)'];
   var numEl = document.getElementById('beatNum');
+  if (!beatAligned) {
+    numEl.textContent = '?';
+    numEl.style.color = 'var(--fg-muted)';
+    document.getElementById('beatLabel').textContent = 'tap beat 1 to sync';
+    document.querySelectorAll('.beat-pip').forEach(function (p) { p.classList.remove('active'); });
+    return;
+  }
   numEl.textContent = (b === 4 || b === 8) ? '·' : b;
   numEl.style.color = colors[b];
   document.getElementById('beatLabel').textContent = labels[b];
@@ -631,12 +655,21 @@ function renderWaveform() {
 
   var bars = 80, bw = w / bars, gap = 1.5;
   var now = performance.now() / 1000;
-  var phase = ((now - lastBeatTime) / beatDur) % 1;
-  var fullPhase = ((beat8 - 1 + phase) % 8);
-  var cb = Math.floor(fullPhase) + 1;
+  var fullPhase, cb;
+  if (beatAligned) {
+    var pt = getPlayerTime();
+    var elapsed = pt - beat1PlayerTime;
+    var beatPos = elapsed / beatDur;
+    fullPhase = ((beatPos % 8) + 8) % 8;
+    cb = Math.floor(fullPhase) + 1;
+  } else {
+    fullPhase = ((now * (bpm / 60)) % 8);
+    cb = 0;
+  }
 
   var color;
-  if (cb === 1) color = waveColors.strong;
+  if (!beatAligned) color = waveColors.pause;
+  else if (cb === 1) color = waveColors.strong;
   else if (cb === 5) color = waveColors.medium;
   else if (cb === 4 || cb === 8) color = waveColors.pause;
   else color = waveColors.regular;
@@ -693,21 +726,21 @@ var tapBtn = document.getElementById('tapBtn');
 tapBtn.addEventListener('pointerdown', function (e) {
   e.preventDefault();
   if (!playing) return;
-  var now = performance.now() / 1000;
+  var pt = getPlayerTime();
 
   if (!beatAligned) {
     beatAligned = true;
-    beatOffset = now;
-    beat8 = 1; lastBeatTime = now;
+    beat1PlayerTime = pt;
+    beat8 = 1; prevBeat8 = 1;
     updateBeatDisplay(1);
-    showTapFeedback('Beat 1 aligned! Keep tapping on 1', true);
+    showTapFeedback('Beat 1 synced! Keep tapping on 1', true);
     flashBtn(true);
     return;
   }
 
   var cycleDur = 8 * beatDur;
-  var elapsed = now - beatOffset;
-  var posInCycle = elapsed % cycleDur;
+  var elapsed = pt - beat1PlayerTime;
+  var posInCycle = ((elapsed % cycleDur) + cycleDur) % cycleDur;
   var tolerance = beatDur * tolMul;
 
   var hit = posInCycle < tolerance || posInCycle > (cycleDur - tolerance);
@@ -744,10 +777,9 @@ function updateTapDisplay() {
 
 function resetTapScore() {
   tapHits = 0; tapMisses = 0; tapTotal = 0;
-  beatAligned = false;
   updateTapDisplay();
   var fb = document.getElementById('tapFeedback');
-  fb.textContent = 'Tap when you hear beat 1';
+  fb.textContent = 'Tap on beat 1 — first tap re-syncs';
   fb.style.color = 'var(--fg-dim)';
 }
 
@@ -765,6 +797,12 @@ document.getElementById('bpmUp').addEventListener('click', function () {
   document.getElementById('bpmDisplay').textContent = bpm + ' BPM';
 });
 document.getElementById('resetScore').addEventListener('click', resetTapScore);
+document.getElementById('resyncBtn').addEventListener('click', function () {
+  beatAligned = false;
+  beat8 = 0; prevBeat8 = 0;
+  updateBeatDisplay(0);
+  showTapFeedback('Tap the TAP button on beat 1 to re-sync', false);
+});
 
 document.getElementById('diffGroup').addEventListener('click', function (e) {
   var btn = e.target.closest('.diff-btn');
