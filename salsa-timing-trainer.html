@@ -231,6 +231,24 @@ canvas#waveform { display: block; width: 100%; height: 120px; }
   font-family: var(--ff-d); font-size: .82rem; font-weight: 600;
   color: var(--fg); min-width: 80px; text-align: center;
 }
+.diff-group {
+  display: flex; gap: 0; border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--border);
+}
+.diff-btn {
+  background: var(--surface); border: none; color: var(--fg-dim);
+  padding: 7px 10px; font-family: var(--ff-b); font-size: .72rem;
+  font-weight: 600; cursor: pointer; transition: all .15s;
+  letter-spacing: .03em; border-right: 1px solid var(--border);
+}
+.diff-btn:last-child { border-right: none; }
+.diff-btn:hover { color: var(--fg); }
+.diff-btn.active { background: var(--strong); color: #fff; }
+.diff-btn.active.med { background: var(--medium); }
+.diff-btn.active.easy { background: var(--hit); }
+.diff-label {
+  font-size: .68rem; color: var(--fg-muted); letter-spacing: .04em;
+}
 .bpm-adj {
   background: var(--surface); border: 1px solid var(--border);
   color: var(--fg); width: 30px; height: 30px; border-radius: 6px;
@@ -359,6 +377,12 @@ canvas#waveform { display: block; width: 100%; height: 120px; }
         <div class="bpm-display" id="bpmDisplay">180 BPM</div>
         <button class="bpm-adj" id="bpmUp">+</button>
         <button class="ctrl-btn" id="resetScore">Reset Score</button>
+        <span class="diff-label">Difficulty:</span>
+        <div class="diff-group" id="diffGroup">
+          <button class="diff-btn" data-tol="0.30">Hard</button>
+          <button class="diff-btn med active" data-tol="0.45">Medium</button>
+          <button class="diff-btn easy" data-tol="0.55">Easy</button>
+        </div>
       </div>
     </div>
 
@@ -395,7 +419,7 @@ var SONGS = [
 /* ---- State ---- */
 var bpm = 180, playing = false, activeSong = -1;
 var beatDur, beat8 = 0, lastBeatTime = 0;
-var metroOn = false, metroCtx = null;
+var metroOn = false, metroCtx = null, tolMul = 0.45;
 var tapHits = 0, tapMisses = 0, tapTotal = 0;
 var beatAligned = false, beatOffset = 0;
 var player = null, ytReady = false, timeUpdateTimer = null;
@@ -684,7 +708,7 @@ tapBtn.addEventListener('pointerdown', function (e) {
   var cycleDur = 8 * beatDur;
   var elapsed = now - beatOffset;
   var posInCycle = elapsed % cycleDur;
-  var tolerance = beatDur * 0.55;
+  var tolerance = beatDur * tolMul;
 
   var hit = posInCycle < tolerance || posInCycle > (cycleDur - tolerance);
   tapTotal++;
@@ -741,6 +765,14 @@ document.getElementById('bpmUp').addEventListener('click', function () {
   document.getElementById('bpmDisplay').textContent = bpm + ' BPM';
 });
 document.getElementById('resetScore').addEventListener('click', resetTapScore);
+
+document.getElementById('diffGroup').addEventListener('click', function (e) {
+  var btn = e.target.closest('.diff-btn');
+  if (!btn) return;
+  this.querySelectorAll('.diff-btn').forEach(function (b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  tolMul = parseFloat(btn.dataset.tol);
+});
 
 /* ---- Playlist ---- */
 function renderPlaylist() {
