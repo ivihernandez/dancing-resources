@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Salsa Timing Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0c0c0f; --bg2: #141418; --surface: #1a1a20;
+  --fg: #e8e6e3; --fg-dim: #8a8892; --fg-muted: #4a4854;
+  --border: #2a2830; --strong: #ef4444; --strong-g: rgba(239,68,68,.35);
+  --medium: #f59e0b; --medium-g: rgba(245,158,11,.3);
+  --regular: #6366f1; --regular-g: rgba(99,102,241,.3);
+  --hit: #22c55e; --hit-g: rgba(34,197,94,.3);
+  --miss: #ef4444;
+  --ff-d: 'Space Grotesk', system-ui, sans-serif;
+  --ff-b: 'Inter', system-ui, sans-serif;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f5f3f0; --bg2: #edeae6; --surface: #fff;
+    --fg: #1a1818; --fg-dim: #6b6570; --fg-muted: #b0a8b8;
+    --border: #ddd8d2; --strong: #dc2626; --strong-g: rgba(220,38,38,.2);
+    --medium: #d97706; --medium-g: rgba(217,119,6,.15);
+    --regular: #4f46e5; --regular-g: rgba(79,70,229,.15);
+    --hit: #16a34a; --hit-g: rgba(22,163,74,.15);
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f5f3f0; --bg2: #edeae6; --surface: #fff;
+  --fg: #1a1818; --fg-dim: #6b6570; --fg-muted: #b0a8b8;
+  --border: #ddd8d2; --strong: #dc2626; --strong-g: rgba(220,38,38,.2);
+  --medium: #d97706; --medium-g: rgba(217,119,6,.15);
+  --regular: #4f46e5; --regular-g: rgba(79,70,229,.15);
+  --hit: #16a34a; --hit-g: rgba(22,163,74,.15);
+  color-scheme: light;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--ff-b); min-height: 100dvh;
+  -webkit-text-size-adjust: 100%;
+}
+.app {
+  max-width: 580px; margin: 0 auto;
+  padding: 20px max(16px, env(safe-area-inset-left, 0px)) 80px;
+}
+h1 {
+  font-family: var(--ff-d); font-size: 1.5rem; font-weight: 700;
+  letter-spacing: .12em; text-align: center; color: var(--strong);
+}
+.subtitle {
+  text-align: center; font-size: .72rem; color: var(--fg-dim);
+  letter-spacing: .04em; margin-top: 2px;
+}
+.now-playing {
+  text-align: center; font-size: .78rem; color: var(--medium);
+  font-weight: 600; margin-top: 8px; min-height: 20px;
+  opacity: 0; transition: opacity .3s;
+}
+.now-playing.visible { opacity: 1; }
+
+/* Audio loader */
+.audio-loader {
+  margin: 16px 0; text-align: center;
+}
+.drop-zone {
+  border: 2px dashed var(--border); border-radius: 12px;
+  padding: 18px 16px; cursor: pointer;
+  transition: border-color .2s, background .2s;
+  position: relative; overflow: hidden;
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--strong); background: var(--strong-g);
+}
+.drop-zone.loaded {
+  border-style: solid; border-color: var(--hit);
+  background: var(--hit-g);
+}
+.drop-label {
+  font-size: .82rem; color: var(--fg-dim); letter-spacing: .02em;
+}
+.drop-label strong { color: var(--fg); }
+.drop-zone.loaded .drop-label { color: var(--hit); }
+.drop-zone input[type=file] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer;
+}
+
+/* Audio controls row */
+.audio-controls {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 10px; justify-content: center;
+}
+.audio-play-btn {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 2px solid var(--strong); background: transparent;
+  color: var(--strong); cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  transition: background .15s, transform .08s;
+  flex-shrink: 0;
+}
+.audio-play-btn:hover { background: var(--strong-g); }
+.audio-play-btn:active { transform: scale(.93); }
+.audio-play-btn.playing { background: var(--strong-g); }
+.audio-play-btn svg { width: 20px; height: 20px; fill: currentColor; }
+.volume-wrap {
+  display: flex; align-items: center; gap: 6px;
+}
+.volume-wrap label { font-size: .65rem; color: var(--fg-muted); letter-spacing: .06em; }
+.volume-wrap input[type=range] {
+  width: 80px; accent-color: var(--strong);
+}
+.audio-time {
+  font-family: var(--ff-d); font-size: .75rem; color: var(--fg-dim);
+  min-width: 80px; text-align: center;
+}
+
+/* Progress bar */
+.progress-bar {
+  height: 4px; background: var(--border); border-radius: 2px;
+  margin: 8px 0; cursor: pointer; position: relative;
+}
+.progress-fill {
+  height: 100%; background: var(--strong); border-radius: 2px;
+  width: 0; transition: width .15s linear;
+  pointer-events: none;
+}
+
+/* Waveform canvas */
+.wave-wrap {
+  height: 140px; border-radius: 10px; overflow: hidden;
+  background: var(--bg2); border: 1px solid var(--border);
+  margin: 12px 0;
+}
+.wave-wrap canvas { width: 100%; height: 100%; display: block; }
+
+/* Beat display */
+.beat-display {
+  text-align: center; margin: 10px 0 4px;
+  display: flex; justify-content: center;
+}
+.beat-number {
+  font-family: var(--ff-d); font-size: 3.5rem; font-weight: 700;
+  line-height: 1; transition: color .08s;
+  color: var(--fg-muted);
+}
+.beat-number.strong { color: var(--strong); }
+.beat-number.medium { color: var(--medium); }
+.beat-number.regular { color: var(--regular); }
+.beat-label {
+  font-size: .6rem; letter-spacing: .15em; color: var(--fg-dim);
+  margin-top: 2px;
+}
+.beat-label.strong { color: var(--strong); }
+.beat-label.medium { color: var(--medium); }
+
+/* Beat strip */
+.beats {
+  display: flex; justify-content: center; gap: 4px;
+  margin: 8px 0;
+}
+.beat-ind {
+  width: 40px; text-align: center; padding: 5px 0;
+  border-radius: 6px; border: 1px solid var(--border);
+  background: var(--surface); transition: all .1s;
+  font-size: .7rem; font-family: var(--ff-d);
+}
+.beat-ind .num { display: block; font-weight: 700; font-size: .85rem; }
+.beat-ind .lbl { display: block; font-size: .45rem; letter-spacing: .08em; color: var(--fg-dim); }
+.beat-ind.active.strong { border-color: var(--strong); background: var(--strong-g); color: var(--strong); }
+.beat-ind.active.medium { border-color: var(--medium); background: var(--medium-g); color: var(--medium); }
+.beat-ind.active.regular { border-color: var(--regular); background: var(--regular-g); color: var(--regular); }
+.beat-ind.active.pause { border-color: var(--fg-muted); }
+
+/* Tap Step 1 */
+.tap-section {
+  margin: 20px 0; text-align: center;
+}
+.tap-instruct {
+  font-size: .7rem; color: var(--fg-dim); margin-bottom: 10px;
+  letter-spacing: .02em; line-height: 1.5;
+}
+.tap-instruct strong { color: var(--fg); }
+.tap-1-btn {
+  width: 100%; max-width: 340px; padding: 24px 20px;
+  border-radius: 16px; border: 2.5px solid var(--strong);
+  background: transparent; color: var(--strong);
+  font-family: var(--ff-d); font-size: 2.2rem;
+  font-weight: 700; letter-spacing: .12em; cursor: pointer;
+  transition: background .08s, transform .06s, box-shadow .08s, border-color .08s, color .08s;
+  user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.tap-1-btn:hover { background: var(--strong-g); }
+.tap-1-btn:active { transform: scale(.95); }
+.tap-1-btn.hit {
+  background: var(--hit-g); border-color: var(--hit); color: var(--hit);
+  box-shadow: 0 0 30px var(--hit-g);
+}
+.tap-1-btn.miss {
+  background: var(--strong-g);
+  box-shadow: 0 0 20px var(--strong-g);
+}
+.tap-1-btn.align {
+  border-color: var(--medium); color: var(--medium);
+  font-size: 1rem; letter-spacing: .06em;
+}
+.tap-feedback {
+  font-size: .85rem; font-weight: 700; letter-spacing: .1em;
+  margin-top: 10px; min-height: 22px;
+}
+.score-row {
+  display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;
+  margin-top: 8px; font-size: .72rem; color: var(--fg-dim);
+}
+.score-val { font-weight: 700; color: var(--fg); }
+.score-reset {
+  background: none; border: none; color: var(--fg-muted); font-size: .6rem;
+  cursor: pointer; text-decoration: underline; margin-top: 4px;
+  font-family: var(--ff-b);
+}
+.score-reset:hover { color: var(--fg-dim); }
+
+/* BPM controls */
+.bpm-row {
+  display: flex; align-items: center; gap: 10px;
+  justify-content: center; margin: 14px 0;
+}
+.bpm-row label { font-size: .65rem; color: var(--fg-muted); letter-spacing: .1em; font-weight: 600; }
+.bpm-row input[type=range] { width: 140px; accent-color: var(--strong); }
+.bpm-val { font-family: var(--ff-d); font-size: .9rem; font-weight: 700; min-width: 36px; }
+.tap-tempo-btn {
+  font-size: .6rem; font-family: var(--ff-d); letter-spacing: .08em;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--fg-dim); padding: 6px 10px; border-radius: 6px;
+  cursor: pointer;
+}
+.tap-tempo-btn:hover { border-color: var(--fg-dim); color: var(--fg); }
+
+/* Metronome toggle */
+.metro-toggle {
+  font-size: .6rem; font-family: var(--ff-d); letter-spacing: .08em;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--fg-dim); padding: 6px 10px; border-radius: 6px;
+  cursor: pointer;
+}
+.metro-toggle.on { border-color: var(--strong); color: var(--strong); }
+
+/* Key legend */
+.key {
+  display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;
+  margin: 10px 0; font-size: .6rem; color: var(--fg-dim);
+}
+.key-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 3px; vertical-align: middle;
+}
+.key-dot.s { background: var(--strong); }
+.key-dot.m { background: var(--medium); }
+.key-dot.r { background: var(--regular); }
+.key-dot.p { background: var(--fg-muted); }
+
+/* Playlist */
+.playlist { margin-top: 20px; }
+.playlist-head {
+  font-family: var(--ff-d); font-size: .7rem; letter-spacing: .12em;
+  color: var(--fg-dim); padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.song {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 6px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background .15s;
+}
+.song:hover { background: var(--bg2); }
+.song.active { background: var(--strong-g); }
+.song-idx {
+  font-family: var(--ff-d); font-size: .7rem; color: var(--fg-muted);
+  min-width: 20px; text-align: right;
+}
+.song-info { flex: 1; min-width: 0; }
+.song-name {
+  font-size: .78rem; font-weight: 500; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.song-artist { font-size: .62rem; color: var(--fg-dim); margin-top: 1px; }
+.song-bpm { font-family: var(--ff-d); font-size: .6rem; color: var(--fg-muted); }
+.song-dur { font-family: var(--ff-d); font-size: .7rem; color: var(--fg-dim); min-width: 38px; text-align: right; }
+.song-load {
+  font-size: .55rem; font-family: var(--ff-d); letter-spacing: .06em;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--fg-dim); padding: 4px 8px; border-radius: 5px;
+  cursor: pointer; white-space: nowrap;
+}
+.song-load:hover { border-color: var(--fg-dim); }
+.song.has-audio .song-load { border-color: var(--hit); color: var(--hit); }
+
+@media (max-width: 480px) {
+  .app { padding: 14px max(12px, env(safe-area-inset-left, 0px)) 80px; }
+  h1 { font-size: 1.25rem; }
+  .wave-wrap { height: 110px; }
+  .beat-number { font-size: 2.8rem; }
+  .beat-ind { width: 34px; }
+  .beat-ind .num { font-size: .75rem; }
+  .tap-1-btn { font-size: 1.8rem; padding: 20px 16px; }
+  .score-row { gap: 10px; font-size: .68rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <h1>SALSA TIMING TRAINER</h1>
+  <p class="subtitle">On-1 count &middot; 1-2-3 pause 5-6-7 pause</p>
+  <div class="now-playing" id="nowPlaying"></div>
+
+  <!-- Audio Loader -->
+  <div class="audio-loader">
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-label" id="dropLabel">
+        <strong>Load a song</strong> &mdash; tap to browse or drag an MP3 here
+      </div>
+      <input type="file" accept="audio/*" id="fileInput">
+    </div>
+  </div>
+
+  <!-- Audio Controls -->
+  <div class="audio-controls" id="audioControls" hidden>
+    <button class="audio-play-btn" id="audioPlayBtn" aria-label="Play audio">
+      <svg viewBox="0 0 24 24"><polygon points="6,3 20,12 6,21"/></svg>
+    </button>
+    <div class="audio-time" id="audioTime">0:00 / 0:00</div>
+    <div class="volume-wrap">
+      <label>VOL</label>
+      <input type="range" id="volumeSlider" min="0" max="100" value="80">
+    </div>
+  </div>
+  <div class="progress-bar" id="progressBar" hidden>
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <!-- Waveform -->
+  <div class="wave-wrap">
+    <canvas id="waveform"></canvas>
+  </div>
+
+  <!-- Beat Display -->
+  <div class="beat-display">
+    <div>
+      <div class="beat-number" id="beatNum">&middot;</div>
+      <div class="beat-label" id="beatLabel">LOAD A SONG TO START</div>
+    </div>
+  </div>
+
+  <!-- Beat Strip -->
+  <div class="beats" id="beatStrip"></div>
+
+  <!-- Tap Step 1 -->
+  <div class="tap-section">
+    <div class="tap-instruct" id="tapInstruct">
+      Load a song, press play, then <strong>tap on every beat 1</strong>.
+      First tap aligns the beat &mdash; the rest are scored.
+    </div>
+    <button class="tap-1-btn" id="tap1Btn">TAP STEP 1</button>
+    <div class="tap-feedback" id="tapFeedback"></div>
+    <div class="score-row" id="scoreRow" hidden>
+      <span>Score: <span class="score-val" id="scoreVal">0 / 0</span></span>
+      <span>Accuracy: <span class="score-val" id="accuracyVal">&mdash;</span></span>
+      <span>Streak: <span class="score-val" id="streakVal">0</span></span>
+    </div>
+    <button class="score-reset" id="scoreReset" hidden>reset score</button>
+  </div>
+
+  <!-- BPM Row -->
+  <div class="bpm-row">
+    <label>BPM</label>
+    <input type="range" id="bpmSlider" min="100" max="240" value="180" step="2">
+    <span class="bpm-val" id="bpmVal">180</span>
+    <button class="tap-tempo-btn" id="tapTempoBtn">TAP TEMPO</button>
+    <button class="metro-toggle on" id="metroToggle">METRO ON</button>
+  </div>
+
+  <!-- Key -->
+  <div class="key">
+    <span><span class="key-dot s"></span> Strong (1)</span>
+    <span><span class="key-dot m"></span> Accent (5)</span>
+    <span><span class="key-dot r"></span> Step</span>
+    <span><span class="key-dot p"></span> Pause</span>
+  </div>
+
+  <!-- Playlist -->
+  <div class="playlist">
+    <div class="playlist-head">YOUR PRACTICE TRACKS &middot; tap a song, then load its audio file</div>
+    <div class="playlist-list" id="playlist"></div>
+  </div>
+</div>
+
+<script>
+/* === DATA === */
+var BEATS = [
+  { num: '1', label: 'STRONG',  intensity: 1.0,  type: 'strong' },
+  { num: '2', label: 'step',    intensity: 0.47, type: 'regular' },
+  { num: '3', label: 'step',    intensity: 0.42, type: 'regular' },
+  { num: '·', label: 'PAUSE', intensity: 0.04, type: 'pause' },
+  { num: '5', label: 'ACCENT',  intensity: 0.73, type: 'medium' },
+  { num: '6', label: 'step',    intensity: 0.44, type: 'regular' },
+  { num: '7', label: 'step',    intensity: 0.40, type: 'regular' },
+  { num: '·', label: 'PAUSE', intensity: 0.04, type: 'pause' },
+];
+
+var SONGS = [
+  { title: 'Salsa Timing Full Track With Count', artist: 'Salsa Timing', dur: '4:52', secs: 292, bpm: 180 },
+  { title: 'Salsa Clave / Piano / Brass / Congas Count', artist: 'Berna Jam', dur: '3:41', secs: 221, bpm: 176 },
+  { title: 'The Best Salsa Song for Beginners - With Counting only on 1', artist: 'Salsa', dur: '4:15', secs: 255, bpm: 170 },
+  { title: 'Salsa Congas / Cowbells / Bongos / Bass / Guiro Count', artist: 'Berna Jam', dur: '2:31', secs: 151, bpm: 176 },
+  { title: 'Scuola Di Salsa', artist: 'Berna Jam', dur: '4:27', secs: 267, bpm: 178 },
+  { title: '1 Count', artist: 'Salsa Timing', dur: '4:12', secs: 252, bpm: 180 },
+  { title: 'Salsa Clave / Piano / Brass / Congas Uncount', artist: 'Berna Jam', dur: '3:41', secs: 221, bpm: 176 },
+  { title: 'Salsa Timing Music 1 & 5 Count', artist: 'Salsa Timing', dur: '3:25', secs: 205, bpm: 180 },
+  { title: 'Salsa Timing Find the Beat 1 Count', artist: 'Salsa Timing', dur: '4:06', secs: 246, bpm: 180 },
+  { title: 'Salsa Timing Find the Beat 1/5 Counts', artist: 'Salsa Timing', dur: '4:06', secs: 246, bpm: 180 },
+  { title: 'Rumba Rumberos (Beginner with Counting on One)', artist: 'Peter Rolls', dur: '4:43', secs: 283, bpm: 168 },
+  { title: 'with Counts 1 5', artist: 'Malek Abu', dur: '4:16', secs: 256, bpm: 175 },
+  { title: 'Salsa Practice Beginners', artist: 'Dj Guero', dur: '5:00', secs: 300, bpm: 172 },
+  { title: 'Salsa Timing - Abre Que Voy (HD)', artist: 'Salsa Beat Machine', dur: '3:55', secs: 235, bpm: 185 },
+  { title: 'Singapore Vibes', artist: 'La Maxima 79', dur: '4:11', secs: 251, bpm: 192 },
+  { title: 'Uno dos tres, Cinco seis siete...', artist: 'Dj Jam', dur: '6:19', secs: 379, bpm: 178 },
+];
+
+/* === DOM === */
+var canvas = document.getElementById('waveform');
+var ctx = canvas.getContext('2d');
+var beatNum = document.getElementById('beatNum');
+var beatLabel = document.getElementById('beatLabel');
+var beatStrip = document.getElementById('beatStrip');
+var nowPlaying = document.getElementById('nowPlaying');
+var dropZone = document.getElementById('dropZone');
+var dropLabel = document.getElementById('dropLabel');
+var fileInput = document.getElementById('fileInput');
+var audioPlayBtn = document.getElementById('audioPlayBtn');
+var audioControls = document.getElementById('audioControls');
+var audioTimeEl = document.getElementById('audioTime');
+var progressBar = document.getElementById('progressBar');
+var progressFill = document.getElementById('progressFill');
+var bpmSlider = document.getElementById('bpmSlider');
+var bpmValEl = document.getElementById('bpmVal');
+var volumeSlider = document.getElementById('volumeSlider');
+var tap1Btn = document.getElementById('tap1Btn');
+var tapFeedback = document.getElementById('tapFeedback');
+var scoreRow = document.getElementById('scoreRow');
+var scoreVal = document.getElementById('scoreVal');
+var accuracyVal = document.getElementById('accuracyVal');
+var streakVal = document.getElementById('streakVal');
+var scoreReset = document.getElementById('scoreReset');
+var tapTempoBtn = document.getElementById('tapTempoBtn');
+var metroToggle = document.getElementById('metroToggle');
+var playlistEl = document.getElementById('playlist');
+
+/* === STATE === */
+var bpm = 180;
+var currentSong = -1;
+var audioLoaded = false;
+var isPlaying = false;
+var metronomeOn = true;
+var dw = 0, dh = 0;
+var lastBeat = -1;
+
+/* Audio */
+var audioCtx = null;
+var audioEl = new Audio();
+audioEl.crossOrigin = 'anonymous';
+var analyser = null;
+var sourceNode = null;
+var freqData = null;
+var timeData = null;
+
+/* Beat alignment for Tap Step 1 */
+var beatAligned = false;
+var beatOffset = 0;
+var score = { correct: 0, total: 0, streak: 0, best: 0 };
+
+/* Metronome scheduling */
+var metroNextTime = 0;
+var metroBeat = 0;
+var metroTimerId = null;
+
+/* Pre-generated noise for static preview */
+var NOISE_LEN = 32768;
+var noiseTable = new Float32Array(NOISE_LEN);
+for (var i = 0; i < NOISE_LEN; i++) noiseTable[i] = 0.25 + Math.random() * 0.75;
+function noise(idx) { return noiseTable[((idx | 0) % NOISE_LEN + NOISE_LEN) % NOISE_LEN]; }
+
+/* === AUDIO INIT === */
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 256;
+  analyser.smoothingTimeConstant = 0.7;
+  freqData = new Uint8Array(analyser.frequencyBinCount);
+  timeData = new Uint8Array(analyser.frequencyBinCount);
+}
+
+function connectSource() {
+  if (sourceNode) return;
+  initAudio();
+  try {
+    sourceNode = audioCtx.createMediaElementSource(audioEl);
+    sourceNode.connect(analyser);
+    analyser.connect(audioCtx.destination);
+  } catch (e) { /* already connected */ }
+}
+
+/* === FILE LOADING === */
+function loadAudioFile(file) {
+  initAudio();
+  connectSource();
+  var url = URL.createObjectURL(file);
+  audioEl.src = url;
+  audioEl.volume = volumeSlider.value / 100;
+  audioLoaded = true;
+  dropZone.classList.add('loaded');
+  dropLabel.innerHTML = '<strong>' + escHtml(file.name) + '</strong> loaded';
+  audioControls.hidden = false;
+  progressBar.hidden = false;
+  beatLabel.textContent = 'PRESS PLAY';
+  // Reset tap alignment
+  beatAligned = false;
+  score = { correct: 0, total: 0, streak: 0, best: 0 };
+  updateScoreUI();
+}
+
+fileInput.addEventListener('change', function() {
+  if (fileInput.files.length) loadAudioFile(fileInput.files[0]);
+});
+
+dropZone.addEventListener('dragover', function(e) {
+  e.preventDefault(); dropZone.classList.add('dragover');
+});
+dropZone.addEventListener('dragleave', function() {
+  dropZone.classList.remove('dragover');
+});
+dropZone.addEventListener('drop', function(e) {
+  e.preventDefault(); dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) loadAudioFile(e.dataTransfer.files[0]);
+});
+
+/* === PLAYBACK === */
+function fmtTime(s) {
+  var m = Math.floor(s / 60);
+  var sec = Math.floor(s % 60);
+  return m + ':' + (sec < 10 ? '0' : '') + sec;
+}
+
+function playAudio() {
+  if (!audioLoaded) return;
+  initAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  audioEl.play();
+  isPlaying = true;
+  audioPlayBtn.classList.add('playing');
+  audioPlayBtn.innerHTML = '<svg viewBox="0 0 24 24"><rect x="5" y="3" width="4" height="18" fill="currentColor"/><rect x="15" y="3" width="4" height="18" fill="currentColor"/></svg>';
+  // Start metronome
+  if (metronomeOn) startMetronome();
+}
+
+function pauseAudio() {
+  audioEl.pause();
+  isPlaying = false;
+  audioPlayBtn.classList.remove('playing');
+  audioPlayBtn.innerHTML = '<svg viewBox="0 0 24 24"><polygon points="6,3 20,12 6,21" fill="currentColor"/></svg>';
+  stopMetronome();
+}
+
+function toggleAudio() {
+  if (!audioLoaded) return;
+  if (isPlaying) pauseAudio(); else playAudio();
+}
+
+audioPlayBtn.addEventListener('click', toggleAudio);
+
+audioEl.addEventListener('ended', function() {
+  pauseAudio();
+  progressFill.style.width = '100%';
+});
+
+audioEl.addEventListener('timeupdate', function() {
+  if (!audioEl.duration) return;
+  audioTimeEl.textContent = fmtTime(audioEl.currentTime) + ' / ' + fmtTime(audioEl.duration);
+  progressFill.style.width = (audioEl.currentTime / audioEl.duration * 100).toFixed(1) + '%';
+});
+
+progressBar.addEventListener('click', function(e) {
+  if (!audioEl.duration) return;
+  var rect = progressBar.getBoundingClientRect();
+  var pct = (e.clientX - rect.left) / rect.width;
+  audioEl.currentTime = pct * audioEl.duration;
+});
+
+volumeSlider.addEventListener('input', function() {
+  audioEl.volume = volumeSlider.value / 100;
+});
+
+/* === METRONOME === */
+function playClick(beatIndex) {
+  if (!audioCtx) return;
+  var b = BEATS[beatIndex];
+  if (b.intensity < 0.1) return;
+  var t = audioCtx.currentTime;
+  var osc = audioCtx.createOscillator();
+  var g = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.value = b.type === 'strong' ? 1400 : b.type === 'medium' ? 1000 : 700;
+  g.gain.setValueAtTime(b.intensity * 0.25, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+  osc.connect(g).connect(audioCtx.destination);
+  osc.start(t); osc.stop(t + 0.06);
+  var buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.015, audioCtx.sampleRate);
+  var ch = buf.getChannelData(0);
+  for (var j = 0; j < ch.length; j++) ch[j] = (Math.random() * 2 - 1);
+  var ns = audioCtx.createBufferSource();
+  var ng = audioCtx.createGain();
+  ns.buffer = buf;
+  ng.gain.setValueAtTime(b.intensity * 0.12, t);
+  ng.gain.exponentialRampToValueAtTime(0.001, t + 0.015);
+  ns.connect(ng).connect(audioCtx.destination);
+  ns.start(t);
+}
+
+function scheduleMetronome() {
+  if (!isPlaying || !metronomeOn || !audioCtx) return;
+  var beatDur = 60 / bpm;
+  while (metroNextTime < audioCtx.currentTime + 0.1) {
+    playClick(metroBeat % 8);
+    metroBeat++;
+    metroNextTime += beatDur;
+  }
+  metroTimerId = setTimeout(scheduleMetronome, 25);
+}
+
+function startMetronome() {
+  if (!audioCtx) initAudio();
+  metroNextTime = audioCtx.currentTime;
+  metroBeat = 0;
+  scheduleMetronome();
+}
+
+function stopMetronome() {
+  if (metroTimerId) { clearTimeout(metroTimerId); metroTimerId = null; }
+}
+
+metroToggle.addEventListener('click', function() {
+  metronomeOn = !metronomeOn;
+  metroToggle.textContent = metronomeOn ? 'METRO ON' : 'METRO OFF';
+  metroToggle.classList.toggle('on', metronomeOn);
+  if (metronomeOn && isPlaying) startMetronome();
+  if (!metronomeOn) stopMetronome();
+});
+
+/* === CANVAS SIZING === */
+function resize() {
+  var rect = canvas.parentElement.getBoundingClientRect();
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  dw = rect.width; dh = rect.height;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+resize();
+window.addEventListener('resize', resize);
+
+/* === COLORS === */
+function getColors() {
+  var s = getComputedStyle(document.documentElement);
+  return {
+    strong: s.getPropertyValue('--strong').trim(),
+    medium: s.getPropertyValue('--medium').trim(),
+    regular: s.getPropertyValue('--regular').trim(),
+    pause: s.getPropertyValue('--fg-muted').trim(),
+    surface: s.getPropertyValue('--surface').trim(),
+    border: s.getPropertyValue('--border').trim(),
+    bg2: s.getPropertyValue('--bg2').trim(),
+    strongG: s.getPropertyValue('--strong-g').trim(),
+    mediumG: s.getPropertyValue('--medium-g').trim(),
+    regularG: s.getPropertyValue('--regular-g').trim(),
+    hit: s.getPropertyValue('--hit').trim(),
+  };
+}
+function colorFor(type, colors) {
+  if (type === 'strong') return colors.strong;
+  if (type === 'medium') return colors.medium;
+  if (type === 'regular') return colors.regular;
+  return colors.pause;
+}
+
+/* === WAVEFORM RENDERING === */
+function render() {
+  var colors = getColors();
+  ctx.clearRect(0, 0, dw, dh);
+  var cy = dh / 2;
+  var maxH = cy - 4;
+
+  // Center line
+  ctx.strokeStyle = colors.border;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(dw, cy); ctx.stroke();
+
+  if (audioLoaded && isPlaying && analyser) {
+    // Real audio visualization
+    analyser.getByteFrequencyData(freqData);
+    var bins = freqData.length;
+    var barW = dw / bins;
+
+    // Current beat for coloring
+    var beatDur = 60 / bpm;
+    var elapsed = audioEl.currentTime;
+    var bi;
+    if (beatAligned) {
+      bi = ((Math.floor((elapsed - beatOffset) / beatDur) % 8) + 8) % 8;
+    } else {
+      bi = ((Math.floor(elapsed / beatDur) % 8) + 8) % 8;
+    }
+    var col = colorFor(BEATS[bi].type, colors);
+
+    for (var i = 0; i < bins; i++) {
+      var v = freqData[i] / 255;
+      var h = v * maxH;
+      if (h < 1) h = 1;
+      var x = i * barW;
+      ctx.fillStyle = col;
+      ctx.globalAlpha = 0.7 + v * 0.3;
+      ctx.fillRect(x, cy - h, Math.max(barW - 1, 1), h);
+      ctx.fillRect(x, cy + 1, Math.max(barW - 1, 1), h);
+    }
+    ctx.globalAlpha = 1;
+  } else {
+    // Static preview: simulated waveform
+    var barW2 = 2, gap2 = 1, step2 = barW2 + gap2;
+    var numBars = Math.ceil(dw / step2);
+    var beatDur2 = 60 / bpm;
+    var totalTime = 8 * beatDur2;
+    for (var j = 0; j < numBars; j++) {
+      var t = (j / numBars) * totalTime;
+      var bi2 = ((Math.floor(t / beatDur2) % 8) + 8) % 8;
+      var prog = (t / beatDur2) % 1;
+      var intensity = BEATS[bi2].intensity;
+      var env = prog < 0.06 ? prog / 0.06 : Math.exp(-5 * (prog - 0.06));
+      var n = noise(Math.floor(t * 150));
+      var hgt = Math.max(0.012, intensity * env * n) * maxH;
+      var x2 = j * step2;
+      ctx.fillStyle = colorFor(BEATS[bi2].type, colors);
+      ctx.globalAlpha = 0.45;
+      ctx.beginPath();
+      ctx.roundRect(x2, cy - hgt, barW2, hgt, [1, 1, 0, 0]);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.roundRect(x2, cy + 1, barW2, hgt, [0, 0, 1, 1]);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    // Beat number overlay
+    for (var b = 0; b < 8; b++) {
+      var bx = (b / 8) * dw + (dw / 16);
+      ctx.fillStyle = colorFor(BEATS[b].type, colors);
+      ctx.globalAlpha = 0.2;
+      ctx.font = 'bold 28px ' + getComputedStyle(document.documentElement).getPropertyValue('--ff-d').trim();
+      ctx.textAlign = 'center';
+      ctx.fillText(BEATS[b].num, bx, cy + 8);
+      ctx.globalAlpha = 1;
+    }
+  }
+}
+
+/* === BEAT UI === */
+BEATS.forEach(function(b, i) {
+  var el = document.createElement('div');
+  el.className = 'beat-ind ' + b.type;
+  el.dataset.beat = i;
+  el.innerHTML = '<span class="num">' + b.num + '</span><span class="lbl">' + (b.type === 'pause' ? '' : b.label) + '</span>';
+  beatStrip.appendChild(el);
+});
+
+function updateBeatUI(bi) {
+  if (bi === lastBeat) return;
+  lastBeat = bi;
+  var beat = BEATS[bi];
+  beatNum.textContent = beat.num;
+  beatNum.className = 'beat-number ' + beat.type;
+  beatLabel.textContent = beat.label;
+  beatLabel.className = 'beat-label ' + (beat.type === 'strong' || beat.type === 'medium' ? beat.type : '');
+  beatStrip.querySelectorAll('.beat-ind').forEach(function(el, i) {
+    el.classList.toggle('active', i === bi);
+  });
+}
+
+/* === ANIMATION LOOP === */
+function tick() {
+  render();
+  if (isPlaying && audioLoaded) {
+    var beatDur = 60 / bpm;
+    var elapsed = audioEl.currentTime;
+    var bi;
+    if (beatAligned) {
+      bi = ((Math.floor((elapsed - beatOffset) / beatDur) % 8) + 8) % 8;
+    } else {
+      bi = ((Math.floor(elapsed / beatDur) % 8) + 8) % 8;
+    }
+    updateBeatUI(bi);
+  }
+  requestAnimationFrame(tick);
+}
+
+/* === TAP STEP 1 === */
+function updateScoreUI() {
+  scoreVal.textContent = score.correct + ' / ' + score.total;
+  accuracyVal.textContent = score.total > 0 ? Math.round(score.correct / score.total * 100) + '%' : '—';
+  var streakTxt = String(score.streak);
+  if (score.best > score.streak) streakTxt += ' (best: ' + score.best + ')';
+  streakVal.textContent = streakTxt;
+  scoreRow.hidden = score.total === 0;
+  scoreReset.hidden = score.total === 0;
+}
+
+tap1Btn.addEventListener('click', function() {
+  if (!isPlaying || !audioLoaded) return;
+
+  var currentTime = audioEl.currentTime;
+  var beatDur = 60 / bpm;
+  var cycleDur = 8 * beatDur;
+
+  // First tap: align beat 1
+  if (!beatAligned) {
+    beatOffset = currentTime;
+    beatAligned = true;
+    tapFeedback.textContent = 'BEAT 1 ALIGNED!';
+    tapFeedback.style.color = getColors().hit;
+    tap1Btn.classList.add('hit');
+    setTimeout(function() {
+      tap1Btn.classList.remove('hit');
+      tapFeedback.textContent = 'Now keep tapping on every beat 1';
+      tapFeedback.style.color = getColors().hit;
+    }, 600);
+    lastBeat = -1;
+    return;
+  }
+
+  // Subsequent taps: score
+  score.total++;
+  var elapsed = currentTime - beatOffset;
+  var nearestCycleN = Math.round(elapsed / cycleDur);
+  var expectedTime = beatOffset + nearestCycleN * cycleDur;
+  var error = Math.abs(currentTime - expectedTime);
+  var tolerance = beatDur * 0.35;
+
+  tap1Btn.classList.remove('hit', 'miss');
+  void tap1Btn.offsetWidth;
+
+  if (error <= tolerance) {
+    score.correct++;
+    score.streak++;
+    if (score.streak > score.best) score.best = score.streak;
+    tap1Btn.classList.add('hit');
+    tapFeedback.textContent = 'HIT!';
+    tapFeedback.style.color = getColors().hit;
+  } else {
+    score.streak = 0;
+    tap1Btn.classList.add('miss');
+    var diff = currentTime - expectedTime;
+    tapFeedback.textContent = 'MISS — ' + (diff > 0 ? 'LATE' : 'EARLY');
+    tapFeedback.style.color = getComputedStyle(document.documentElement).getPropertyValue('--strong').trim();
+  }
+  updateScoreUI();
+  setTimeout(function() { tap1Btn.classList.remove('hit', 'miss'); }, 300);
+});
+
+scoreReset.addEventListener('click', function() {
+  score = { correct: 0, total: 0, streak: 0, best: 0 };
+  beatAligned = false;
+  beatOffset = 0;
+  updateScoreUI();
+  tapFeedback.textContent = '';
+});
+
+/* === BPM === */
+bpmSlider.addEventListener('input', function() {
+  bpm = +bpmSlider.value;
+  bpmValEl.textContent = bpm;
+});
+
+var tapTimes = [];
+tapTempoBtn.addEventListener('click', function() {
+  var now = performance.now();
+  if (tapTimes.length && now - tapTimes[tapTimes.length - 1] > 2000) tapTimes = [];
+  tapTimes.push(now);
+  if (tapTimes.length > 8) tapTimes.shift();
+  if (tapTimes.length >= 2) {
+    var total = 0;
+    for (var k = 1; k < tapTimes.length; k++) total += tapTimes[k] - tapTimes[k - 1];
+    var avg = total / (tapTimes.length - 1);
+    var detected = Math.round(60000 / avg);
+    if (detected >= 100 && detected <= 240) {
+      bpm = detected; bpmSlider.value = bpm; bpmValEl.textContent = bpm;
+    }
+  }
+});
+
+/* === PLAYLIST === */
+function escHtml(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function selectSong(i) {
+  var s = SONGS[i];
+  currentSong = i;
+  bpm = s.bpm;
+  bpmSlider.value = bpm;
+  bpmValEl.textContent = bpm;
+  nowPlaying.textContent = '▶ ' + s.title + ' — ' + s.artist;
+  nowPlaying.classList.add('visible');
+  // Reset alignment when switching songs
+  beatAligned = false;
+  score = { correct: 0, total: 0, streak: 0, best: 0 };
+  updateScoreUI();
+  tapFeedback.textContent = '';
+  renderPlaylist();
+}
+
+function renderPlaylist() {
+  playlistEl.innerHTML = '';
+  SONGS.forEach(function(s, i) {
+    var el = document.createElement('div');
+    el.className = 'song' + (i === currentSong ? ' active' : '');
+    el.innerHTML = '<span class="song-idx">' + (i + 1) + '</span>'
+      + '<div class="song-info"><div class="song-name">' + escHtml(s.title) + '</div>'
+      + '<div class="song-artist">' + escHtml(s.artist) + ' &middot; ' + s.bpm + ' BPM</div></div>'
+      + '<span class="song-dur">' + s.dur + '</span>';
+    el.addEventListener('click', function() { selectSong(i); });
+    playlistEl.appendChild(el);
+  });
+}
+renderPlaylist();
+
+/* === KEYBOARD === */
+document.addEventListener('keydown', function(e) {
+  if (e.code === 'Space' && e.target === document.body) {
+    e.preventDefault();
+    toggleAudio();
+  }
+});
+
+/* === START === */
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
