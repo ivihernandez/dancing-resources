@@ -405,7 +405,8 @@ canvas#waveform { display: block; width: 100%; height: 120px; }
           <button class="bpm-adj" id="bpmUp">+</button>
           <div class="cal-status" id="calStatus">saved</div>
         </div>
-        <button class="ctrl-btn" id="analyzeBtn">Analyze Audio</button>
+        <button class="ctrl-btn" id="calibrateBtn">Auto-Calibrate</button>
+        <button class="ctrl-btn" id="analyzeBtn">Measure BPM</button>
         <button class="ctrl-btn" id="resyncBtn">Re-sync Beat 1</button>
         <button class="ctrl-btn" id="resetScore">Reset Score</button>
         <span class="diff-label">Difficulty:</span>
@@ -1047,8 +1048,16 @@ function fft(re, im) {
   }
 }
 
-function onsetEnvelope(x, sr, hop, nfft) {
+/* t0 is the time of frame 0: flux[i] measures the rise between two frame
+   centres, so it belongs at their midpoint, not at the frame's left edge.
+   Getting this wrong biases every phase estimate by about 25ms. */
+function onsetEnvelope(x, sr, hop, nfft, fmin, fmax) {
   var win = hannWindow(nfft), nb = (nfft >> 1) + 1;
+  var lo = 0, hi = nb - 1;
+  if (fmin !== undefined) {
+    lo = Math.max(0, Math.floor(fmin * nfft / sr));
+    hi = Math.min(nb - 1, Math.ceil(fmax * nfft / sr));
+  }
   var nFrames = 1 + Math.max(0, Math.floor((x.length - nfft) / hop));
   var env = new Float64Array(nFrames);
   var re = new Float64Array(nfft), im = new Float64Array(nfft);
@@ -1058,12 +1067,12 @@ function onsetEnvelope(x, sr, hop, nfft) {
     off = f * hop;
     for (i = 0; i < nfft; i++) { re[i] = x[off + i] * win[i]; im[i] = 0; }
     fft(re, im);
-    for (i = 0; i < nb; i++) {
+    for (i = lo; i <= hi; i++) {
       cur[i] = Math.log1p(10 * Math.sqrt(re[i] * re[i] + im[i] * im[i]));
     }
     if (f > 0) {
       sum = 0;
-      for (i = 0; i < nb; i++) { d = cur[i] - prev[i]; if (d > 0) sum += d; }
+      for (i = lo; i <= hi; i++) { d = cur[i] - prev[i]; if (d > 0) sum += d; }
       env[f] = sum;
     }
     swap = prev; prev = cur; cur = swap;
@@ -1072,7 +1081,17 @@ function onsetEnvelope(x, sr, hop, nfft) {
   for (f = 0; f < nFrames; f++) mean += env[f];
   mean /= Math.max(1, nFrames);
   for (f = 0; f < nFrames; f++) env[f] -= mean;
-  return { env: env, fps: sr / hop };
+  return { env: env, fps: sr / hop, t0: (nfft - hop) / (2 * sr) };
+}
+
+function sampleEnv(env, frame) {
+  var n = env.length;
+  if (!(frame >= 0)) frame = 0;
+  var i0 = Math.floor(frame);
+  if (i0 > n - 2) i0 = n - 2;
+  if (i0 < 0) return 0;
+  var fr = frame - i0;
+  return env[i0] * (1 - fr) + env[i0 + 1] * fr;
 }
 
 /* autocorrelation peaks, parabolically interpolated for sub-frame lag */
@@ -1186,6 +1205,97 @@ function measureTempo(x, sr) {
   };
 }
 
+/* Locate the beat grid's phase at high resolution, +/- half a beat. */
+function refinePhase(oh, bpmVal, phaseSec) {
+  var T = 60 / bpmVal, dur = oh.env.length / oh.fps;
+  var best = null, p, k, sum, nBeats;
+  for (p = phaseSec - 0.5 * T; p <= phaseSec + 0.5 * T; p += 0.0005) {
+    if (p < 0) continue;
+    nBeats = Math.floor((dur - p) / T);
+    if (nBeats < 12) continue;
+    sum = 0;
+    for (k = 0; k < nBeats; k++) {
+      sum += sampleEnv(oh.env, (p + k * T - oh.t0) * oh.fps);
+    }
+    sum /= nBeats;
+    if (!best || sum > best.s) best = { s: sum, p: p };
+  }
+  return best ? best.p : phaseSec;
+}
+
+/* Which of the eight beats carries the spoken "one". These are counting
+   tracks, so the voice band is the giveaway. A track counting on both 1 and 5
+   is genuinely ambiguous and shows up as low contrast. */
+function pickEightPhase(ov, bpmVal, phaseSec, dur) {
+  var T = 60 / bpmVal;
+  var nBeats = Math.floor((dur - phaseSec - 0.2) / T);
+  var scores = [], phi, k, d, s, n, t;
+  for (phi = 0; phi < 8; phi++) {
+    s = 0; n = 0;
+    for (k = phi; k < nBeats; k += 8) {
+      t = phaseSec + k * T;
+      for (d = 0; d < 4; d++) { s += sampleEnv(ov.env, (t + d * 0.04 - ov.t0) * ov.fps); n++; }
+    }
+    scores.push(n ? s / n : 0);
+  }
+  var max = -Infinity, mean = 0, idx = 0;
+  for (phi = 0; phi < 8; phi++) {
+    mean += scores[phi];
+    if (scores[phi] > max) { max = scores[phi]; idx = phi; }
+  }
+  mean /= 8;
+  return { phi: idx, contrast: max / (Math.abs(mean) || 1e-12), scores: scores };
+}
+
+function measureBeat1(x, sr, bpmVal) {
+  var hop = Math.max(128, Math.round(sr / 93.75));
+  var nfft = sr < 32000 ? 1024 : 2048;
+  var o = onsetEnvelope(x, sr, hop, nfft);
+  /* bpm is already known, so this only searches phase */
+  var fit = combFit(o.env, o.fps, bpmVal, 0.001, 0.001, 480);
+  if (!fit) return null;
+  var phaseSec = fit.phase / o.fps + o.t0;
+
+  var hopHi = Math.max(32, Math.round(sr / 375));
+  var oh = onsetEnvelope(x, sr, hopHi, 512);
+  phaseSec = refinePhase(oh, bpmVal, phaseSec);
+
+  var ov = onsetEnvelope(x, sr, hopHi, 1024, 300, 3000);
+  var e = pickEightPhase(ov, bpmVal, phaseSec, x.length / sr);
+  return {
+    beat1: phaseSec + e.phi * (60 / bpmVal),
+    contrast: e.contrast,
+    gridPhase: phaseSec
+  };
+}
+
+/* The capture starts while the video is paused, so it opens with true digital
+   silence. The first sustained audio is therefore video time zero, which pins
+   the phase without having to know the capture pipeline's latency. */
+function findAudioStart(x, sr) {
+  /* Block RMS, not raw samples: any waveform crosses zero constantly, so a run
+     of consecutive samples over a threshold finds the first loud transient
+     rather than the moment sound begins. */
+  var block = Math.max(32, Math.floor(sr * 0.002));
+  var nBlocks = Math.floor(x.length / block);
+  if (nBlocks < 20) return -1;
+  var probe = Math.min(nBlocks, Math.floor(0.30 * sr / block));
+  var i, j, s, r, floorRms = 0;
+  for (i = 0; i < probe; i++) {
+    s = 0;
+    for (j = 0; j < block; j++) { r = x[i * block + j]; s += r * r; }
+    r = Math.sqrt(s / block);
+    if (r > floorRms) floorRms = r;
+  }
+  var thresh = Math.max(floorRms * 4, 2e-5);
+  for (i = probe; i < nBlocks; i++) {
+    s = 0;
+    for (j = 0; j < block; j++) { r = x[i * block + j]; s += r * r; }
+    if (Math.sqrt(s / block) > thresh) return i * block;
+  }
+  return -1;
+}
+
 async function analyzeAudio() {
   if (analyzing) return;
   if (activeSong < 0 || !playing) {
@@ -1280,7 +1390,141 @@ async function analyzeAudio() {
   }
 }
 
+/* Full calibration: rewind, open the capture on silence so video time zero is
+   pinned, then play. Yields both bpm and beat 1 with nothing to tap. */
+var CALIBRATE_SECS = 60;
+
+async function autoCalibrate() {
+  if (analyzing) return;
+  if (activeSong < 0 || !player) {
+    setAnalyzeStatus('Pick a song first, then auto-calibrate.', 'warn');
+    return;
+  }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia || !window.MediaRecorder) {
+    setAnalyzeStatus('This browser cannot capture tab audio. Desktop Chrome or Edge is needed.', 'warn');
+    return;
+  }
+
+  var btn = document.getElementById('calibrateBtn');
+  var stream = null, audioCtx = null, songId = SONGS[activeSong].ytId;
+  analyzing = true;
+  btn.classList.add('busy');
+  try {
+    setAnalyzeStatus('In the prompt: pick this tab and turn on "Also share tab audio".');
+    stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+    var aTracks = stream.getAudioTracks();
+    stream.getVideoTracks().forEach(function (t) { t.stop(); });
+    if (!aTracks.length) {
+      setAnalyzeStatus('No audio was shared. Run it again and switch on "Also share tab audio".', 'warn');
+      return;
+    }
+
+    setAnalyzeStatus('Rewinding to the start…');
+    try { player.pauseVideo(); } catch (e) {}
+    await sleep(300);
+    try { player.seekTo(0, true); } catch (e) {}
+    await sleep(700);
+    try { player.pauseVideo(); } catch (e) {}
+    await sleep(500);
+
+    var rec = new MediaRecorder(new MediaStream([aTracks[0]]));
+    var parts = [];
+    rec.ondataavailable = function (e) { if (e.data && e.data.size) parts.push(e.data); };
+    var stopped = new Promise(function (res) { rec.onstop = res; });
+    rec.start();
+    var recWall = Date.now();
+    await sleep(900);
+    try { player.playVideo(); } catch (e) {}
+    var playWall = Date.now();
+
+    for (var s = CALIBRATE_SECS; s > 0; s--) {
+      setAnalyzeStatus('Listening from the top… ' + s + 's left (leave it playing).');
+      await sleep(1000);
+    }
+    var endTime = 0;
+    try { endTime = player.getCurrentTime(); } catch (e) {}
+    rec.stop();
+    await stopped;
+    aTracks.forEach(function (t) { t.stop(); });
+
+    /* If an ad or a stall interrupted, video time will not have advanced by
+       roughly the capture length and the silence anchor no longer means t=0. */
+    if (Math.abs(endTime - CALIBRATE_SECS) > 6) {
+      setAnalyzeStatus('Playback did not run cleanly from the start (an ad or buffering got in the way). Try again.', 'warn');
+      return;
+    }
+
+    setAnalyzeStatus('Analysing…');
+    await sleep(40);
+    var bytes = await new Blob(parts).arrayBuffer();
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    var decoded = await audioCtx.decodeAudioData(bytes);
+    var all = decoded.getChannelData(0), sr = decoded.sampleRate;
+
+    var startIdx = findAudioStart(all, sr);
+    if (startIdx < 0) {
+      setAnalyzeStatus('Nothing audible was captured. Check that tab audio was shared, then retry.', 'warn');
+      return;
+    }
+    /* Sound should begin about when playback was asked for, plus the capture
+       pipeline's own lag. A much later onset means the track itself opens with
+       silence, so the anchor is not video time zero and the phase cannot be
+       trusted -- fall back to a tap rather than being a second out. */
+    var impliedLag = (startIdx / sr) - (playWall - recWall) / 1000;
+    var phaseTrusted = impliedLag < 0.6 && impliedLag > -0.25;
+
+    var x = all.slice(startIdx);
+    var tempo = measureTempo(x, sr);
+    if (!tempo) {
+      setAnalyzeStatus('No steady pulse found in the first minute. Try Measure BPM further into the track.', 'warn');
+      return;
+    }
+    var phase = measureBeat1(x, sr, tempo.bpm);
+    if (songId !== (SONGS[activeSong] || {}).ytId) {
+      setAnalyzeStatus('Song changed during the capture, so the result was discarded.', 'warn');
+      return;
+    }
+
+    setBpm(tempo.bpm);
+    bpmFromAudio = true;
+    var msg;
+    if (phase && phaseTrusted) {
+      beat1PlayerTime = phase.beat1;
+      beatAligned = true;
+      beat8 = 1; prevBeat8 = 1;
+      saveCalibration(songId, bpm, beat1PlayerTime, true);
+      msg = 'Calibrated: ' + fmtBpm(bpm) + ' BPM, beat 1 at ' + beat1PlayerTime.toFixed(2) + 's.';
+      if (phase.contrast < 1.15) {
+        msg += ' This track counts on both 1 and 5, so beat 1 is less certain — if it feels half a bar out, tap once on beat 1.';
+      }
+    } else {
+      saveCalibration(songId, bpm, null, true);
+      msg = 'Measured ' + fmtBpm(bpm) + ' BPM. Beat 1 could not be pinned down'
+        + (phase ? ' (the track does not start promptly)' : '')
+        + ' — tap once on beat 1.';
+    }
+    if (tempo.spread !== null && tempo.spread > 1.5) {
+      msg += ' Tempo drifts by about ' + tempo.spread.toFixed(1) + ' BPM, so the count will slide late in the track.';
+    }
+    renderPlaylist();
+    setAnalyzeStatus(msg, 'ok');
+  } catch (err) {
+    var nm = err && err.name;
+    if (nm === 'NotAllowedError' || nm === 'AbortError') {
+      setAnalyzeStatus('Screen share was dismissed, so nothing was measured.');
+    } else {
+      setAnalyzeStatus('Calibration failed: ' + ((err && err.message) || nm || 'unknown error'), 'warn');
+    }
+  } finally {
+    if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
+    if (audioCtx) { try { audioCtx.close(); } catch (e) {} }
+    analyzing = false;
+    btn.classList.remove('busy');
+  }
+}
+
 document.getElementById('analyzeBtn').addEventListener('click', analyzeAudio);
+document.getElementById('calibrateBtn').addEventListener('click', autoCalibrate);
 
 /* ---- Playlist ---- */
 function renderPlaylist() {
