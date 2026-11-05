@@ -325,6 +325,26 @@ canvas#waveform { display: block; width: 100%; height: 120px; }
   font-size: .68rem; color: var(--fg-muted); font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
+.song-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.p-badge {
+  font-family: var(--ff-d); font-size: .6rem; font-weight: 700;
+  letter-spacing: .06em; padding: 1px 5px; border-radius: 3px;
+  flex-shrink: 0; line-height: 1.2;
+}
+.p-badge.p1 {
+  background: color-mix(in srgb, var(--strong) 15%, transparent);
+  color: var(--strong); border: 1px solid color-mix(in srgb, var(--strong) 30%, transparent);
+}
+.p-badge.p5 {
+  background: color-mix(in srgb, var(--medium) 15%, transparent);
+  color: var(--medium); border: 1px solid color-mix(in srgb, var(--medium) 30%, transparent);
+}
+.section-divider {
+  padding: 10px 10px 4px; font-size: .6rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--fg-dim); border-top: 1px solid var(--border);
+  margin-top: 8px;
+}
 </style>
 </head>
 <body>
@@ -422,7 +442,7 @@ canvas#waveform { display: block; width: 100%; height: 120px; }
     <div class="side-col">
       <div class="playlist-header">
         <div class="playlist-title">Practice Songs</div>
-        <div class="playlist-count" id="playlistCount">16 songs</div>
+        <div class="playlist-count" id="playlistCount">30 songs</div>
       </div>
       <div class="song-list" id="songList"></div>
     </div>
@@ -449,6 +469,24 @@ var SONGS = [
   { title: 'Salsa Timing - Abre Que Voy (HD)', artist: 'Salsa Beat Machine', dur: '3:55', secs: 235, bpm: 185, ytId: 'DN_u2BVc9u0', beat1: 0.00 },
   { title: 'Singapore Vibes', artist: 'La Maxima 79', dur: '4:11', secs: 251, bpm: 192, ytId: 'l5qBmrW_fUk', beat1: 0.00 },
   { title: 'Uno dos tres, Cinco seis siete...', artist: 'Dj Jam', dur: '6:19', secs: 379, bpm: 178, ytId: 'F4yJa1g7Xnw', beat1: 0.00 },
+
+  // P1 songs: melody/vocal enters on beat 1
+  { title: 'Vivir Mi Vida', artist: 'Marc Anthony', dur: '4:11', secs: 251, bpm: 184, ytId: 'YXnjy5YlDwk', beat1: 0.00, p: 1, section: 'Starts on 1 — grounded, easy to find the beat' },
+  { title: 'La Vida Es Un Carnaval', artist: 'Celia Cruz', dur: '4:42', secs: 282, bpm: 180, ytId: 'kc5DMYSkkmU', beat1: 0.00, p: 1 },
+  { title: 'Quimbara', artist: 'Celia Cruz', dur: '5:18', secs: 318, bpm: 174, ytId: 'kcFxsBOJJhY', beat1: 0.00, p: 1 },
+  { title: 'La Rebelion', artist: 'Joe Arroyo', dur: '5:36', secs: 336, bpm: 172, ytId: 'UOwR5MNaLqo', beat1: 0.00, p: 1 },
+  { title: 'Lloraras', artist: 'Oscar D\'Leon', dur: '5:52', secs: 352, bpm: 176, ytId: 'TJlExyNUJJI', beat1: 0.00, p: 1 },
+  { title: 'Tu Con Tu', artist: 'Frankie Ruiz', dur: '5:01', secs: 301, bpm: 178, ytId: 'qlKR0rGkFM0', beat1: 0.00, p: 1 },
+  { title: 'Ven Devorame Otra Vez', artist: 'Lalo Rodriguez', dur: '4:45', secs: 285, bpm: 170, ytId: 'D3wnTCOG0Xk', beat1: 0.00, p: 1 },
+
+  // P5 songs: melody/vocal enters on beat 5
+  { title: 'Periodico de Ayer', artist: 'Hector Lavoe', dur: '5:30', secs: 330, bpm: 168, ytId: 'J7c5FhD0fMk', beat1: 0.00, p: 5, section: 'Starts on 5 — anticipation, phrase lifts before resolving' },
+  { title: 'El Cantante', artist: 'Hector Lavoe', dur: '5:27', secs: 327, bpm: 170, ytId: 'IVRPJwWJAbM', beat1: 0.00, p: 5 },
+  { title: 'Aguanile', artist: 'Hector Lavoe', dur: '6:00', secs: 360, bpm: 175, ytId: 'cxJ8nOlBRJk', beat1: 0.00, p: 5 },
+  { title: 'Pedro Navaja', artist: 'Ruben Blades', dur: '7:30', secs: 450, bpm: 176, ytId: 'O4-tRa1Dwpg', beat1: 0.00, p: 5 },
+  { title: 'Decisiones', artist: 'Ruben Blades', dur: '6:22', secs: 382, bpm: 178, ytId: 'UOwI2AMVHZI', beat1: 0.00, p: 5 },
+  { title: 'Idilio', artist: 'Willie Colon', dur: '4:30', secs: 270, bpm: 168, ytId: 'N7oROCkN1KY', beat1: 0.00, p: 5 },
+  { title: 'Cali Pachanguero', artist: 'Grupo Niche', dur: '5:20', secs: 320, bpm: 185, ytId: 'O0sKlw6SGnM', beat1: 0.00, p: 5 },
 ];
 
 /* ---- State ---- */
@@ -1530,15 +1568,26 @@ document.getElementById('calibrateBtn').addEventListener('click', autoCalibrate)
 function renderPlaylist() {
   var list = document.getElementById('songList');
   list.innerHTML = '';
+  var songNum = 0;
   SONGS.forEach(function (s, i) {
+    if (s.section) {
+      var sec = document.createElement('div');
+      sec.className = 'section-divider';
+      sec.textContent = s.section;
+      list.appendChild(sec);
+    }
+    songNum++;
     var d = document.createElement('div');
     d.className = 'song-item' + (i === activeSong ? ' active' : '');
     var cal = loadCalibration(s.ytId);
     var calMark = cal ? ' <span style="color:var(--hit);font-size:.6rem" title="Calibrated: ' + cal.bpm + ' BPM">&#9679;</span>' : '';
-    d.innerHTML = '<span class="song-num">' + (i + 1) + '</span>' +
+    var pBadge = '';
+    if (s.p === 1) pBadge = '<span class="p-badge p1">P1</span>';
+    else if (s.p === 5) pBadge = '<span class="p-badge p5">P5</span>';
+    d.innerHTML = '<span class="song-num">' + songNum + '</span>' +
       '<div class="song-info"><div class="song-name">' + s.title + calMark + '</div>' +
       '<div class="song-artist">' + s.artist + '</div></div>' +
-      '<span class="song-dur">' + s.dur + '</span>';
+      '<div class="song-meta">' + pBadge + '<span class="song-dur">' + s.dur + '</span></div>';
     d.addEventListener('click', function () { playSong(i); });
     list.appendChild(d);
   });
