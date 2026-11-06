@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Community Posting Strategy</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #FAFAF8;
+  --surface: #FFFFFF;
+  --border: #E8E6E1;
+  --fg: #1A1917;
+  --fg2: #6B6860;
+  --accent-ivi: #2D6A4F;
+  --accent-ivi-bg: #D8F3DC;
+  --accent-elias: #7B2D8B;
+  --accent-elias-bg: #F0D9F5;
+  --warn: #C65D07;
+  --warn-bg: #FFF3E0;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141413;
+    --surface: #1E1E1C;
+    --border: #2E2D2A;
+    --fg: #EDECE8;
+    --fg2: #9C9A93;
+    --accent-ivi: #52B788;
+    --accent-ivi-bg: #1B3A2A;
+    --accent-elias: #CE93D8;
+    --accent-elias-bg: #3A1D42;
+    --warn: #FFB74D;
+    --warn-bg: #3E2A10;
+    --radius: 10px;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141413;
+  --surface: #1E1E1C;
+  --border: #2E2D2A;
+  --fg: #EDECE8;
+  --fg2: #9C9A93;
+  --accent-ivi: #52B788;
+  --accent-ivi-bg: #1B3A2A;
+  --accent-elias: #CE93D8;
+  --accent-elias-bg: #3A1D42;
+  --warn: #FFB74D;
+  --warn-bg: #3E2A10;
+  --radius: 10px;
+  color-scheme: dark;
+}
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  padding-left: 16px;
+  padding-right: 16px;
+  padding-top: 24px;
+  padding-bottom: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0 0 6px;
+  text-wrap: balance;
+}
+.subtitle {
+  color: var(--fg2);
+  font-size: 0.9rem;
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+.dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.dot-ivi { background: var(--accent-ivi); }
+.dot-elias { background: var(--accent-elias); }
+.restriction-note {
+  font-size: 0.78rem;
+  color: var(--warn);
+  background: var(--warn-bg);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'DM Mono', monospace;
+}
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 28px 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.section-desc {
+  font-size: 0.82rem;
+  color: var(--fg2);
+  margin: 0 0 12px;
+}
+.tier-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--border);
+  color: var(--fg2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-family: 'DM Mono', monospace;
+}
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  min-width: 820px;
+}
+th {
+  text-align: left;
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fg2);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+}
+td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  background: var(--surface);
+  line-height: 1.4;
+}
+tr:last-child td { border-bottom: none; }
+.owner-ivi td:first-child { border-left: 3px solid var(--accent-ivi); }
+.owner-elias td:first-child { border-left: 3px solid var(--accent-elias); }
+.badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'DM Mono', monospace;
+  white-space: nowrap;
+}
+.badge-ivi { color: var(--accent-ivi); background: var(--accent-ivi-bg); }
+.badge-elias { color: var(--accent-elias); background: var(--accent-elias-bg); }
+a { color: inherit; }
+a:hover { text-decoration: underline; }
+td a { color: var(--accent-ivi); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) td a { color: #64B5F6; } }
+:root[data-theme="dark"] td a { color: #64B5F6; }
+.warn-inline {
+  color: var(--warn);
+  font-size: 0.72rem;
+  font-family: 'DM Mono', monospace;
+}
+.owner-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: inline-block;
+  margin: 20px 0 6px;
+}
+.owner-label-ivi { color: var(--accent-ivi); background: var(--accent-ivi-bg); }
+.owner-label-elias { color: var(--accent-elias); background: var(--accent-elias-bg); }
+</style>
+</head>
+<body>
+
+<h1>FlightIQ Community Posting Strategy</h1>
+<p class="subtitle">Exact threads to post in, split between Ivi and Elias <strong>by platform</strong>. All links are real, clickable thread URLs. <span class="restriction-note">Orange = needs karma/post count first</span></p>
+
+<div class="legend">
+  <div class="legend-item"><div class="dot dot-ivi"></div> Ivi — FlyerTalk, Travel Forums, Facebook, Reddit travel subs (41 rows)</div>
+  <div class="legend-item"><div class="dot dot-elias"></div> Elias — Quora, Tech/Launches, Social, Other, Reddit budget/points subs (41 rows)</div>
+</div>
+
+<div class="section-title"><span class="tier-label">FlyerTalk</span> Answer threads — build post count for weeks first <span class="owner-label owner-label-ivi">Ivi</span></div>
+<p class="section-desc">Power users check your post history. Never cold-post product links. Register and contribute genuinely for 4-6 weeks.</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>Owner</th><th>Forum</th><th>Topic</th><th>What to post</th><th>Thread (URL)</th></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>FlyerTalk: Travel Tools</td><td>Fare comparison tools</td><td>Answer threads comparing tools — share fare-class breakdown expertise</td><td><a href="https://www.flyertalk.com/forum/travel-tools/" target="_blank">FlyerTalk Travel Tools forum</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>FlyerTalk: Budget Travel</td><td>Basic Economy rules</td><td>Answer BE restriction threads with complete fare family breakdowns</td><td><a href="https://www.flyertalk.com/forum/budget-travel/" target="_blank">FlyerTalk Budget Travel forum</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>FlyerTalk: Budget Travel</td><td>SW baggage changes</td><td>Answer Southwest fee threads — explain what changed in 2026</td><td><a href="https://www.flyertalk.com/forum/southwest-airlines-rapid-rewards/2189035-no-fees-business-model-gutted-baggage-fees-other-changes-11.html" target="_blank">SW no-fees model gutted thread</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>FlyerTalk: AA</td><td>AA codeshare bag rules</td><td>Answer codeshare basic economy baggage confusion threads</td><td><a href="https://www.flyertalk.com/forum/american-airlines-aadvantage/2177020-baggage-query-codeshare-basic-economy-fare.html" target="_blank">AA codeshare basic economy baggage</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>FlyerTalk: United</td><td>United BE carry-on</td><td>Answer "can I bring a carry-on on United BE?" threads</td><td><a href="https://www.flyertalk.com/forum/united-airlines-mileageplus/1802527-united-s-basic-economy-discussion-q-now-cancellable-fee-56.html" target="_blank">United Basic Economy discussion (pg 56)</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>FlyerTalk: UA</td><td>New fare tiers</td><td>Answer confusion about UA Base Business / Premium Economy fare classes</td><td><a href="https://www.flyertalk.com/forum/united-airlines-mileageplus/2215734-ua-launches-base-basic-business-premium-economy-8.html" target="_blank">UA Base Business + Premium Economy</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>FlyerTalk: Mileage Run</td><td>Deal analysis</td><td>Answer "is this deal real?" threads with total net cost analysis</td><td><a href="https://www.flyertalk.com/forum/mileage-run-deals-372/" target="_blank">FlyerTalk Mileage Run Deals</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>FlyerTalk: Safety</td><td>Tight connections</td><td>Answer tight international layover threads with MCT feasibility</td><td><a href="https://www.flyertalk.com/forum/practical-travel-safety-security-issues-619/" target="_blank">FlyerTalk Safety &amp; Security</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>FlyerTalk: Children</td><td>UM fees &amp; seating</td><td>Answer unaccompanied minor fee and family seating threads</td><td><a href="https://www.flyertalk.com/forum/travel-children-221/" target="_blank">FlyerTalk Travel with Children</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>FlyerTalk: SW</td><td>Carry-on changes</td><td>Answer "is Southwest shrinking carry-on?" threads with facts</td><td><a href="https://www.flyertalk.com/forum/southwest-airlines-rapid-rewards/2207037-new-smaller-carry-bag-requirement-2026-a.html" target="_blank">New SW carry-on requirement 2026</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>FlyerTalk: AA</td><td>AA BE upgrade block</td><td>Answer threads about AA blocking upgrades on BE ahead of May 2026 change</td><td><a href="https://www.flyertalk.com/forum/american-airlines-aadvantage/2217351-warning-aa-blocking-swu-upgrades-ahead-5-8-2026-a.html" target="_blank">AA blocking BE SWU upgrades</a></td></tr>
+</table>
+</div>
+
+<div class="section-title"><span class="tier-label">Forums</span> Fodor's, Rick Steves, Tripadvisor, VisaJourney <span class="owner-label owner-label-ivi">Ivi</span></div>
+<p class="section-desc">Traditional travel forums. Register and answer questions. Older demographic values thorough, detailed replies.</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>Owner</th><th>Forum</th><th>Topic</th><th>What to post</th><th>Thread (URL)</th></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>Fodor's Air Travel</td><td>Mixed-cabin luggage</td><td>Answer mixed-cabin luggage allowance confusion — does business bag allowance carry over?</td><td><a href="https://www.fodors.com/community/air-travel/luggage-allowance-if-flying-business-and-economy-back-1708703/" target="_blank">Luggage allowance business+economy</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>Fodor's Air Travel</td><td>Checked bag fees</td><td>Answer "buying tickets &amp; checked bag fees" questions with airline-by-airline comparisons</td><td><a href="https://www.fodors.com/community/air-travel/buying-plane-tickets-and-checked-bag-fees-791252/" target="_blank">Buying tickets &amp; checked bag fees</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>Fodor's News</td><td>2026 fee hikes</td><td>Comment on Fodor's baggage fee news article with practical comparisons</td><td><a href="https://www.fodors.com/news/news/airlines-raise-baggage-fees-as-jet-fuel-prices-surge-amid-global-tensions" target="_blank">Airlines raise baggage fees (2026)</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>Rick Steves</td><td>Layover timing</td><td>Answer European layover threads — hub-by-hub connection guidance (FRA, CDG, AMS)</td><td><a href="https://community.ricksteves.com/travel-forum/croatia/layover-timing" target="_blank">Layover timing</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>Rick Steves</td><td>Airfare trends</td><td>Answer with fare trajectory data — when to buy, when to wait for Europe routes</td><td><a href="https://community.ricksteves.com/travel-forum/transportation/falling-airfare-prices-for-june-2026" target="_blank">Falling airfare prices June 2026</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>Rick Steves</td><td>Frankfurt layover</td><td>Answer connection-time feasibility at FRA — terminal layout, immigration timing</td><td><a href="https://community.ricksteves.com/travel-forum/transportation/layover-time-through-frankfurt" target="_blank">Layover time through Frankfurt</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>Rick Steves</td><td>Separate tickets risk</td><td>Answer 1-ticket vs 2-ticket threads — explain rebooking rights and connection protection</td><td><a href="https://community.ricksteves.com/travel-forum/tours/one-way-flight-w-layover-1-ticket-vs-2-separate-tickets" target="_blank">One way flight: 1 ticket vs 2</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>Rick Steves</td><td>Airfare advice</td><td>Answer "looking for airfare advice" threads with comparison methodology</td><td><a href="https://community.ricksteves.com/travel-forum/general-europe/looking-for-airfare-advice-from-you-travel-savvy-pals" target="_blank">Looking for airfare advice</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>Rick Steves</td><td>Airline comparison</td><td>Answer Delta vs AA vs United threads with objective trade-off analysis</td><td><a href="https://community.ricksteves.com/travel-forum/general-europe/thoughts-on-delta-aa-united" target="_blank">Thoughts on Delta, AA, United</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>Rick Steves</td><td>Europe connection safety</td><td>Answer "is my layover long enough?" with data on European hub connection minimums</td><td><a href="https://community.ricksteves.com/travel-forum/transportation/safe-layover-time-for-connecting-flight-to-europe" target="_blank">Safe layover time to Europe</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>Tripadvisor Air</td><td>United BE luggage</td><td>Answer "what can I bring on United Basic Economy?" with current 2026 rules</td><td><a href="https://www.tripadvisor.com/ShowTopic-g1-i10702-k12835438-United_Airlines_Basic_Economy_luggage-Air_Travel.html" target="_blank">United Airlines BE luggage</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>Tripadvisor Air</td><td>Codeshare baggage</td><td>Answer codeshare bag rules — who controls the allowance on a marketed vs operated flight?</td><td><a href="https://www.tripadvisor.com/ShowTopic-g1-i10702-k14923558-Baggage_query_codeshare_basic_economy_fare-Air_Travel.html" target="_blank">Codeshare basic economy baggage</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>Tripadvisor Air</td><td>Connecting flight bags</td><td>Answer "do bags transfer on connections?" threads</td><td><a href="https://www.tripadvisor.com/ShowTopic-g1-i10702-k15271914-Connecting_flight_baggage-Air_Travel.html" target="_blank">Connecting flight baggage</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>Tripadvisor Air</td><td>AA connection bags</td><td>Answer American Airlines checked baggage on connections questions</td><td><a href="https://www.tripadvisor.com/ShowTopic-g1-i10702-k14080509-Checked_baggage_on_a_connection_with_American_Airlines-Air_Travel.html" target="_blank">AA checked baggage on connection</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>Tripadvisor Air</td><td>BE seat assignments</td><td>Answer "do I get a seat assignment on basic?" threads</td><td><a href="https://www.tripadvisor.com/ShowTopic-g1-i10702-k14796702-Basic_tickets_seat_assignments-Air_Travel.html" target="_blank">Basic tickets = seat assignments</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>VisaJourney</td><td>Spouse/fianc&eacute; flights</td><td>Answer international fare conditions for immigration flights. <span class="warn-inline">Build post count first</span></td><td><a href="https://www.visajourney.com/forums/" target="_blank">VisaJourney Forums</a></td></tr>
+</table>
+</div>
+
+<div class="section-title"><span class="tier-label">Facebook</span> Groups — join early, wait for approval, then answer <span class="owner-label owner-label-ivi">Ivi</span></div>
+<p class="section-desc">Join in week 1, wait for admin approval, lurk, then start helping. Anti-spam rules in most groups.</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>Owner</th><th>Forum</th><th>Topic</th><th>What to post</th><th>Thread (URL)</th></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>FB: Girls LOVE Travel</td><td>Safe connections</td><td>Answer scary-layover threads — safety-first trade-off analysis for solo female travelers</td><td><a href="https://www.facebook.com/groups/girlslovetravel/" target="_blank">Girls LOVE Travel (1.2M members)</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>FB: Families Who Love Travel</td><td>Family baggage</td><td>Answer family flight threads — per-person bag costs, child seating, UM rules</td><td><a href="https://www.facebook.com/groups/familieswholovetotravel/" target="_blank">Families Who Love To Travel (180K)</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>FB: Digital Nomads</td><td>Multi-hop traps</td><td>Answer complicated international booking threads — plain-English itinerary trade-offs</td><td><a href="https://www.facebook.com/groups/DigitalNomadsAroundTheWorld/" target="_blank">Digital Nomads Around the World (170K)</a></td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>FB: Solo Female Travelers</td><td>Connection safety</td><td>Answer stress about airport navigation and sudden re-routing — objective layover clarity</td><td><a href="https://www.facebook.com/groups/solofemaletravelers/" target="_blank">Solo Female Travelers (350K)</a></td></tr>
+</table>
+</div>
+
+<div class="section-title"><span class="tier-label">Quora</span> Evergreen SEO — answers rank on Google for years <span class="owner-label owner-label-elias">Elias</span></div>
+<p class="section-desc">No restrictions. Answer immediately. Focus on high-search-volume questions. Include FlightIQ organically as one tool.</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>Owner</th><th>Forum</th><th>Topic</th><th>What to post</th><th>Thread (URL)</th></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Quora</td><td>United BE bag cost</td><td>Answer with current 2026 United checked bag fees + Basic Economy carry-on rules</td><td><a href="https://www.quora.com/How-much-does-it-cost-to-check-a-bag-on-the-United-Basic-economy" target="_blank">United Basic Economy bag cost?</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Quora</td><td>United BE carry-on</td><td>Answer: "No, United BE domestic only allows a personal item. Here's how to compare total cost."</td><td><a href="https://www.quora.com/Can-I-get-away-without-paying-for-a-carry-on-bag-in-United-Airlines-basic-economy-ticket" target="_blank">Can I skip carry-on fee on United BE?</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Quora</td><td>AA baggage fees</td><td>Answer with full 2026 AA bag fee schedule — domestic vs international, basic vs regular</td><td><a href="https://www.quora.com/What-is-American-Airlines-baggage-fees" target="_blank">What are AA baggage fees?</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Quora</td><td>AA intl checked bags</td><td>Answer: "Yes on Basic Economy, but it depends on route and ticket date. Here's the breakdown."</td><td><a href="https://www.quora.com/Do-American-airlines-charge-for-checked-bags-on-international-flights" target="_blank">Does AA charge for bags on intl?</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Quora</td><td>Free checked bags</td><td>Answer with 2026 status — which airlines still include, which charge, credit card perks</td><td><a href="https://www.quora.com/Which-U-S-airlines-still-offer-a-free-first-checked-bag" target="_blank">Which US airlines still offer free bag?</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Quora</td><td>AA first checked bag</td><td>Answer with current fee + how co-branded credit cards can waive it</td><td><a href="https://www.quora.com/Does-American-Airlines-charge-for-the-first-checked-bag" target="_blank">Does AA charge for first checked bag?</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Quora</td><td>SW vs other airlines bags</td><td>Answer: "Southwest now charges too (2026). Here's how all US carriers compare side-by-side."</td><td><a href="https://www.quora.com/How-do-the-checked-baggage-fees-of-Southwest-Airlines-compare-to-those-of-other-US-carriers" target="_blank">SW bag fees vs other carriers?</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Quora</td><td>Delta intl bag fees</td><td>Answer with 2026 Delta international baggage policy — economy vs basic</td><td><a href="https://www.quora.com/What-is-the-baggage-fee-for-Delta-Air-Lines-International" target="_blank">Delta international baggage fee?</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Quora</td><td>Highest bag fee airline</td><td>Answer: compare all US carriers' fee schedules side-by-side with total-cost methodology</td><td><a href="https://www.quora.com/What-is-the-airline-in-the-US-with-the-highest-number-of-baggage-fees" target="_blank">US airline with highest bag fees?</a></td></tr>
+</table>
+</div>
+
+<div class="section-title"><span class="tier-label">Tech</span> Hacker News, Product Hunt, Indie Hackers, BetaList <span class="owner-label owner-label-elias">Elias</span></div>
+<p class="section-desc">Product launches and build-in-public. HN needs karma; PH and BetaList are product submissions; IH is open.</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>Owner</th><th>Forum</th><th>Topic</th><th>What to post</th><th>Thread (URL)</th></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Hacker News</td><td>Show HN launch <span class="warn-inline">POST</span></td><td>Create "Show HN: FlightIQ" — lead with problem, not AI. Be transparent about limits. Weeks 7-8.</td><td><a href="https://news.ycombinator.com/" target="_blank">Hacker News — create Show HN</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Hacker News</td><td>Travel Hacking Toolkit</td><td>Comment on this Show HN with FlightIQ's trade-off approach vs points optimization</td><td><a href="https://news.ycombinator.com/item?id=47635033" target="_blank">Show HN: Travel Hacking Toolkit</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Hacker News</td><td>BonBook thread</td><td>Already commented. Continue engaging on flight-booking threads to build karma.</td><td><a href="https://news.ycombinator.com/item?id=50174185" target="_blank">Show HN: Book flights via email</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Hacker News</td><td>Airline comparison</td><td>Comment with FlightIQ's approach to comparing beyond delay/cancellation data</td><td><a href="https://news.ycombinator.com/item?id=41903566" target="_blank">Show HN: Compare airline performance</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Hacker News</td><td>Starlink on flights</td><td>Comment comparing flight amenity info — connect to FlightIQ's trade-off engine</td><td><a href="https://news.ycombinator.com/item?id=47428650" target="_blank">Show HN: Will my flight have Starlink?</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Product Hunt</td><td>FlightIQ launch <span class="warn-inline">SUBMIT</span></td><td>Launch on Tue/Wed. "Consent-first flight comparison." Show real UI. Weeks 7-8.</td><td><a href="https://www.producthunt.com/products/flightiq/flightiq/prelaunch" target="_blank">FlightIQ prelaunch (already live)</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Indie Hackers</td><td>Build-in-public <span class="warn-inline">POST</span></td><td>Create: "How we think about pricing when our fee is visible." Founder story, not pitch.</td><td><a href="https://www.indiehackers.com/" target="_blank">Indie Hackers — create new post</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Indie Hackers</td><td>Ava launch thread</td><td>Comment on this flight co-pilot launch — compare approaches, share learnings</td><td><a href="https://www.indiehackers.com/post/we-just-launched-ava-your-personal-flight-co-pilot-on-whereflight-685a76c618" target="_blank">Ava flight co-pilot launch</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Indie Hackers</td><td>Group demand tool</td><td>Comment on CannyFlyer's group-demand model — compare to FlightIQ's consent-first approach</td><td><a href="https://www.indiehackers.com/post/i-got-tired-of-opaque-flight-pricing-built-anonymous-group-demand-1-000-users-c3cad4a7e5" target="_blank">Opaque pricing &rarr; group demand (1K users)</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>BetaList</td><td>Product submit <span class="warn-inline">SUBMIT</span></td><td>Submit FlightIQ. "Consent-first flight comparison — AI does the research, you confirm."</td><td><a href="https://betalist.com/" target="_blank">BetaList — submit product</a></td></tr>
+</table>
+</div>
+
+<div class="section-title"><span class="tier-label">Social</span> TikTok, YouTube, X / Twitter — comment engagement <span class="owner-label owner-label-elias">Elias</span></div>
+<p class="section-desc">No restrictions. Start immediately. Be the smart corrector on viral travel content.</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>Owner</th><th>Forum</th><th>Topic</th><th>What to post</th><th>Thread (URL)</th></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>TikTok</td><td>Erika Kullberg viral</td><td>Comment: "Add one bag and that 'secret' fare is 2x the price. BE doesn't include carry-on."</td><td><a href="https://www.tiktok.com/@erikakullberg/video/7463837151713709317" target="_blank">@erikakullberg: Airlines don't want you to know (8M+ likes)</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>TikTok</td><td>AA baggage fees</td><td>Comment with actual fee breakdown — correct any outdated info in the video</td><td><a href="https://www.tiktok.com/@itsyourtravelbestie/video/7250485655468412206" target="_blank">@itsyourtravelbestie: AA Baggage Fees</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>YouTube</td><td>Hidden fees exposed</td><td>Comment with nuanced corrections — "The real trap is comparing base price, not total-with-bags"</td><td><a href="https://www.youtube.com/watch?v=YSKWuHmKXDA" target="_blank">The REAL Cost of Flying in 2026 (Hidden Fees EXPOSED!)</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>YouTube</td><td>2026 fee changes</td><td>Comment: "Southwest now charges too. Here's what actually changed in 2026."</td><td><a href="https://www.youtube.com/watch?v=DZ6a6obU_T4" target="_blank">Airlines Just Changed Baggage Fees Again (2026)</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>X / Twitter</td><td>#BasicEconomy</td><td>Quote-tweet booking nightmares with real analysis: fare rules, DOT rights, what to do</td><td><a href="https://x.com/hashtag/BasicEconomy" target="_blank">#BasicEconomy on X</a></td></tr>
+</table>
+</div>
+
+<div class="section-title"><span class="tier-label">Other</span> Nomad List, Remotive, The Points Guy, expat forums <span class="owner-label owner-label-elias">Elias</span></div>
+
+<div class="table-wrap">
+<table>
+<tr><th>Owner</th><th>Forum</th><th>Topic</th><th>What to post</th><th>Thread (URL)</th></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Nomad List</td><td>Regional airline traps</td><td>Answer SE Asia / Europe regional airline gotcha threads — true cost w/ carry-on rollers</td><td><a href="https://nomadlist.com/forum" target="_blank">Nomad List Forum</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Remotive Slack</td><td>Conference travel</td><td>Answer remote-worker travel threads in Slack channels</td><td><a href="https://remotive.com/" target="_blank">Remotive — join Slack community</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>The Points Guy</td><td>Cash vs points</td><td>Comment on articles — when cash fares beat points, explain with re-shopping data</td><td><a href="https://thepointsguy.com/news/american-airlines-raises-checked-bag-fees-basic-economy-rules" target="_blank">TPG: AA raises bag fees + BE rules</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>The Points Guy</td><td>AA BE new fees</td><td>Comment with objective total-cost comparison across airlines</td><td><a href="https://thepointsguy.com/news/american-airlines-basic-economy-new-fees" target="_blank">TPG: AA basic economy new fees</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>The Points Guy</td><td>Google Flights bag rules</td><td>Comment: "Google Flights now shows bag rules but not total cost — here's what's still missing"</td><td><a href="https://thepointsguy.com/news/google-flights-baggage-rules" target="_blank">TPG: Google Flights baggage rules</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Expat Exchange</td><td>One-way vs round-trip</td><td>Answer relocation flight questions — one-way pricing, bag allowances, cancellation terms</td><td><a href="https://expatexchange.com/thread/229/3354981/Ireland/Expats-Living-in-Ireland/Roundtrip-or-One-Way" target="_blank">Roundtrip or One Way (Ireland)</a></td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>Expat Exchange</td><td>Return flight decision</td><td>Answer "one way or return?" with cost comparison and flexibility analysis</td><td><a href="https://expatexchange.com/expatguide/229/3400319/Ireland/Expats-Living-in-Ireland/One-way-or-return-flight" target="_blank">One way or return flight (Ireland)</a></td></tr>
+</table>
+</div>
+
+<div class="section-title"><span class="tier-label">Reddit</span> Thread URLs must be found manually</div>
+<p class="section-desc" style="background: var(--warn-bg); padding: 8px 12px; border-radius: 6px; color: var(--warn);">Reddit blocks all automated URL retrieval. Open each subreddit below, search the topic keyword, and paste the thread URL into your tracker. Spend 2 weeks answering other posts before any self-promo. All subs require karma + account age.</p>
+
+<p style="font-size: 0.82rem; font-weight: 600; color: var(--accent-ivi); margin: 12px 0 6px;">Ivi's subreddits — travel-focused subs</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>Owner</th><th>Subreddit</th><th>Topic to search</th><th>What to post</th></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>r/flights</td><td>baggage fees</td><td>Answer "how much will bags cost on X?" with a total-cost breakdown — mention FlightIQ only if someone asks how you got the numbers</td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>r/flights</td><td>basic economy worth it</td><td>Give an honest comparison of BE vs regular economy with real fare examples</td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>r/solotravel</td><td>carry on only</td><td>Answer packing-light threads with airline-specific bag dimension/weight rules</td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>r/solotravel</td><td>budget airline tips</td><td>Share practical tips on avoiding surprise fees when flying budget carriers</td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>r/TravelHacks</td><td>flight comparison tool</td><td>Answer "best site to compare flights?" threads — mention total cost matters more than base fare</td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>r/TravelHacks</td><td>baggage hack</td><td>Share airline-specific tips on maximizing free carry-on allowances</td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>r/digitalnomad</td><td>flight booking tips</td><td>Answer with region-specific airline advice (SE Asia budget carriers, EU fare traps)</td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>r/digitalnomad</td><td>one way vs round trip</td><td>Answer with cost comparison and flexibility analysis for nomad travel patterns</td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>r/SWAirlines</td><td>bags fly free</td><td>Answer comparison threads — when SW free bags actually save money vs competitors</td></tr>
+<tr class="owner-ivi"><td><span class="badge badge-ivi">Ivi</span></td><td>r/AmericanAirlines</td><td>checked bag fee</td><td>Answer with current fee tiers and credit card waiver options</td></tr>
+</table>
+</div>
+
+<p style="font-size: 0.82rem; font-weight: 600; color: var(--accent-elias); margin: 12px 0 6px;">Elias's subreddits — budget &amp; points subs</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>Owner</th><th>Subreddit</th><th>Topic to search</th><th>What to post</th></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>r/travel</td><td>hidden fees airlines</td><td>Share a "fees I didn't expect" story and how to avoid them on your next trip</td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>r/travel</td><td>cheapest way to fly</td><td>Answer with total-cost comparison (fare + bags + seat) rather than just base fare</td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>r/Shoestring</td><td>cheapest flights</td><td>Answer with total-cost methodology — base fare is misleading without extras</td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>r/Shoestring</td><td>airline fees avoid</td><td>Share specific fee-avoidance strategies per airline with real examples</td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>r/awardtravel</td><td>cash vs points value</td><td>Answer "should I use points?" threads with actual cost-per-point math</td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>r/awardtravel</td><td>basic economy award</td><td>Explain how BE restrictions affect award bookings and when to pay cash instead</td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>r/airlines</td><td>United basic economy</td><td>Answer with specific United BE restrictions and total cost vs regular economy</td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>r/airlines</td><td>American Airlines fees</td><td>Answer with current AA fee structure and how it compares to Delta/United</td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>r/unitedairlines</td><td>economy vs basic economy</td><td>Answer with specific fare difference and what you lose/gain</td></tr>
+<tr class="owner-elias"><td><span class="badge badge-elias">Elias</span></td><td>r/delta</td><td>basic economy restrictions</td><td>Answer with Delta BE specifics and when upgrading to Main Cabin is worth it</td></tr>
+</table>
+</div>
+
+</body>
+</html>
